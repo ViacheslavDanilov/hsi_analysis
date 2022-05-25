@@ -1,6 +1,7 @@
 import os
+import re
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Tuple
 
 import numpy as np
 from struct import unpack
@@ -9,9 +10,12 @@ from struct import unpack
 def read_hsi(
         path: str,
 ) -> np.ndarray:
-    """ Read HSI images (.dat files) as a numpy array (H, W, WL).
+    """ Read HSI images (.dat files) as a numpy array (H, W, WL)
+
     Args:
         path: a path to a .dat file being read
+    Returns:
+        data: HSI represented in a 3D NumPy array
     """
 
     if not isinstance(path, str):
@@ -41,6 +45,7 @@ def get_file_list(
 ) -> List[str]:
     """
     Get list of files with the specified extensions
+
     Args:
         src_dirs: directory(s) with files inside
         ext_list: extension(s) used for a search
@@ -66,3 +71,47 @@ def get_file_list(
                     all_files.append(file_path)
     all_files.sort()
     return all_files
+
+
+def extract_body_part(
+        path: str,
+) -> str:
+    """
+    Extract a body part name based on the HSI path
+    Args:
+        path:
+
+    Returns:
+        body_part:
+    """
+    if 'liver' in path.lower():
+        body_part = 'Liver'
+    elif 'pancreas' in path.lower():
+        body_part = 'Pancreas'
+    elif 'stomach' in path.lower():
+        body_part = 'Stomach'
+    elif 'heart' in path.lower():
+        body_part = 'Heart'
+    else:
+        body_part = 'Unknown'
+
+    return body_part
+
+
+def extract_time_stamp(
+        filename: str,
+) -> Tuple[str, str]:
+
+    try:
+        datetime_list = re.findall(r'\d+', filename)
+        if len(datetime_list) == 6:
+            date = f'{datetime_list[2]}.{datetime_list[1]}.{datetime_list[0]}'
+            time = f'{datetime_list[3]}:{datetime_list[4]}:{datetime_list[5]}'
+        else:
+            date = 'Invalid date'
+            time = 'Invalid time'
+    except Exception as e:
+        date = 'Invalid date'
+        time = 'Invalid time'
+
+    return date, time
