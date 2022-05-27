@@ -10,7 +10,8 @@ from struct import unpack
 def read_hsi(
         path: str,
 ) -> np.ndarray:
-    """ Read HSI images (.dat files) as a numpy array (H, W, WL)
+    """
+    Read HSI images (.dat files) as a numpy array (H, W, WL)
 
     Args:
         path: a path to a .dat file being read
@@ -78,12 +79,13 @@ def extract_body_part(
 ) -> str:
     """
     Extract a body part name based on the HSI path
-    Args:
-        path:
 
+    Args:
+        path: a path to a file
     Returns:
         body_part:
     """
+
     if 'liver' in path.lower():
         body_part = 'Liver'
     elif 'pancreas' in path.lower():
@@ -101,6 +103,15 @@ def extract_body_part(
 def extract_time_stamp(
         filename: str,
 ) -> Tuple[str, str]:
+    """
+    Extract a time stamp from the HSI filename
+
+    Args:
+        filename: a filename with an unstructured time stamp
+    Returns:
+        date: a date string in format DD.MM.YYYY
+        time: a time string in format HH:MM:SS
+    """
 
     try:
         datetime_list = re.findall(r'\d+', filename)
