@@ -54,18 +54,18 @@ def main(
     logger.info('')
 
     # Get list of HSI files
-    hsi_list = get_file_list(
+    hsi_paths = get_file_list(
         src_dirs=input_dir,
         include_template='',
         ext_list='.dat',
     )
-    logger.info(f'HSI found..........: {len(hsi_list)}')
+    logger.info(f'HSI found..........: {len(hsi_paths)}')
 
     # Multiprocessing of all HSIs
     num_cores = multiprocessing.cpu_count()
     metadata = process_map(
         process_hsi,
-        tqdm(hsi_list, desc='Process hyperspectral images', unit=' HSI'),
+        tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI'),
         max_workers=num_cores,
     )
 

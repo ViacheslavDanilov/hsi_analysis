@@ -123,12 +123,12 @@ def main(
     logger.info('')
 
     # Get list of HSI files
-    hsi_list = get_file_list(
+    hsi_paths = get_file_list(
         src_dirs=input_dir,
         include_template='',
         ext_list='.dat',
     )
-    logger.info(f'HSI found..........: {len(hsi_list)}')
+    logger.info(f'HSI found..........: {len(hsi_paths)}')
 
     # Multiprocessing of HSI files
     os.makedirs(save_dir, exist_ok=True)
@@ -142,7 +142,7 @@ def main(
     )
     _metadata = process_map(
         processing_func,
-        tqdm(hsi_list, desc='Process hyperspectral images', unit=' HSI'),
+        tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI'),
         max_workers=num_cores,
     )
     metadata = sum(_metadata, [])
