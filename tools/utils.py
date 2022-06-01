@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 
 import numpy as np
 from struct import unpack
@@ -9,18 +9,20 @@ from struct import unpack
 
 def read_hsi(
         path: str,
+        data_type: str = 'absorbance',
 ) -> np.ndarray:
     """
     Read HSI images (.dat files) as a numpy array (H, W, WL)
 
     Args:
         path: a path to a .dat file being read
+        data_type: a mode of reading HSI images
     Returns:
         data: HSI represented in a 3D NumPy array
     """
 
     if not isinstance(path, str):
-        raise ValueError(f'Invalid data type: {type(path)}')
+        raise ValueError(f"Invalid data type: {type(path)}")
     elif not os.path.isfile(path):
         raise ValueError(f"The file doesn't exist: {path}")
     elif not path.lower().endswith('.dat'):
@@ -35,6 +37,15 @@ def read_hsi(
         data = data.reshape(size)
         data = np.transpose(data, (1, 0, 2))
         data = data[::-1, ::1, :]
+
+        if data_type == 'reflectance':
+            pass
+        elif data_type == 'absorbance':
+            data = -np.log10(np.maximum(data, 0.01))
+        else:
+            raise ValueError(f'Invalid data type: {data_type}')
+
+        data = data.astype(np.float32)
 
         return data
 
