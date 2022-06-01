@@ -1,8 +1,9 @@
 import os
 import re
 from pathlib import Path
-from typing import List, Union, Tuple, Optional
+from typing import List, Union, Tuple
 
+import cv2
 import numpy as np
 from struct import unpack
 
@@ -137,3 +138,21 @@ def extract_time_stamp(
         time = 'Invalid time'
 
     return date, time
+
+
+def get_color_map(
+        color_map: str,
+):
+    if color_map == 'jet':
+        cmap = cv2.COLORMAP_JET
+    elif color_map == 'bone':
+        cmap = cv2.COLORMAP_BONE
+    elif color_map == 'ocean':
+        cmap = cv2.COLORMAP_OCEAN
+    elif color_map == 'cool':
+        cmap = cv2.COLORMAP_COOL
+    elif color_map == 'hsv':
+        cmap = cv2.COLORMAP_HSV
+    else:
+        raise ValueError(f'Unknown color map: {color_map}')
+    return cmap
