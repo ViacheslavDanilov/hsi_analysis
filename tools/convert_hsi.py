@@ -55,9 +55,9 @@ def process_hsi(
     if output_type == 'video':
         video_name = f'{hsi_name}.mp4'
         video_path = os.path.join(save_dir, video_name)
-        _image = imutils.resize(hsi[:, :, 0], height=output_size[0], inter=cv2.INTER_LINEAR)
-        _image_size = _image.shape[:-1] if len(_image.shape) == 3 else _image.shape
-        video_height, video_width = _image_size
+        _img = imutils.resize(hsi[:, :, 0], height=output_size[0], inter=cv2.INTER_LINEAR)
+        _img_size = _img.shape[:-1] if len(_img.shape) == 3 else _img.shape
+        video_height, video_width = _img_size
         video = cv2.VideoWriter(
             video_path,
             cv2.VideoWriter_fourcc(*'mp4v'),
@@ -69,9 +69,9 @@ def process_hsi(
     metadata = []
     for idx in range(hsi.shape[2]):
 
-        image = hsi[:, :, idx]
-        image_name = Path(file_path).stem + f'_{idx+1:03d}.png'
-        image_path = os.path.join(save_dir, image_name)
+        img = hsi[:, :, idx]
+        img_name = Path(file_path).stem + f'_{idx+1:03d}.png'
+        img_path = os.path.join(save_dir, img_name)
 
         metadata.append(
             {
@@ -80,40 +80,40 @@ def process_hsi(
                 'Date': date,
                 'Time': time,
                 'Body part': body_part,
-                'Image path': image_path,
-                'Image name': image_name,
-                'Min': np.min(image),
-                'Mean': np.mean(image),
-                'Max': np.max(image),
-                'Height': image.shape[0],
-                'Width': image.shape[1],
+                'Image path': img_path,
+                'Image name': img_name,
+                'Min': np.min(img),
+                'Mean': np.mean(img),
+                'Max': np.max(img),
+                'Height': img.shape[0],
+                'Width': img.shape[1],
                 'Wavelength': idx+1,
             }
         )
 
         # Resize and normalize image
-        image_size = image.shape[:-1] if len(image.shape) == 3 else image.shape
-        if image_size != output_size:
-            image = imutils.resize(image, height=output_size[0], inter=cv2.INTER_LINEAR)
-        image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        img_size = img.shape[:-1] if len(img.shape) == 3 else img.shape
+        if img_size != output_size:
+            img = imutils.resize(img, height=output_size[0], inter=cv2.INTER_LINEAR)
+        img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
         # Equalize histogram
         if apply_equalization:
-            image = cv2.equalizeHist(image)
+            img = cv2.equalizeHist(img)
 
         # Colorize image
         if isinstance(color_map, str) and color_map is not None:
             cmap = get_color_map(color_map)
-            image = cv2.applyColorMap(image, cmap)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            img = cv2.applyColorMap(img, cmap)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         else:
-            image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
         # Save image
         if output_type == 'image':
-            cv2.imwrite(image_path, image)
+            cv2.imwrite(img_path, img)
         elif output_type == 'video':
-            video.write(image)
+            video.write(img)
         else:
             raise ValueError(f'Unknown output_type value: {output_type}')
 
