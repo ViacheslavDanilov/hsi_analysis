@@ -30,6 +30,7 @@ def process_hsi(
         file_path: str,
         data_type: str,
         color_map: str,
+        apply_equalization: bool,
         output_type: str,
         output_size: Tuple[int, int],
         fps: int,
@@ -64,6 +65,7 @@ def process_hsi(
             (video_width, video_height),
         )
 
+    # Process HSI in an image-by-image fashion
     metadata = []
     for idx in range(hsi.shape[2]):
 
@@ -95,6 +97,10 @@ def process_hsi(
             image = imutils.resize(image, height=output_size[0], inter=cv2.INTER_LINEAR)
         image = cv2.normalize(image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
+        # Equalize histogram
+        if apply_equalization:
+            image = cv2.equalizeHist(image)
+
         # Colorize image
         if isinstance(color_map, str) and color_map is not None:
             cmap = get_color_map(color_map)
@@ -122,6 +128,7 @@ def main(
         input_dir: str,
         data_type: str,
         color_map: str,
+        apply_equalization: bool,
         output_type: str,
         output_size: Tuple[int, int],
         fps: int,
@@ -133,6 +140,7 @@ def main(
     logger.info(f'Output dir.........: {save_dir}')
     logger.info(f'Data type..........: {data_type}')
     logger.info(f'Color map..........: {color_map}')
+    logger.info(f'Apply equalization.: {apply_equalization}')
     logger.info(f'Output type........: {output_type}')
     logger.info(f'Output size........: {output_size}')
     logger.info(f'FPS................: {fps if output_type == "video" else None}')
@@ -153,6 +161,7 @@ def main(
         process_hsi,
         data_type=data_type,
         color_map=color_map,
+        apply_equalization=apply_equalization,
         output_type=output_type,
         output_size=output_size,
         fps=fps,
@@ -185,6 +194,7 @@ if __name__ == '__main__':
     parser.add_argument('--input_dir', default='dataset', type=str)
     parser.add_argument('--data_type',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
     parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
+    parser.add_argument('--apply_equalization', action='store_true')
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
@@ -195,6 +205,7 @@ if __name__ == '__main__':
         input_dir=args.input_dir,
         data_type=args.data_type,
         color_map=args.color_map,
+        apply_equalization=args.apply_equalization,
         output_type=args.output_type,
         output_size=tuple(args.output_size),
         fps=args.fps,
