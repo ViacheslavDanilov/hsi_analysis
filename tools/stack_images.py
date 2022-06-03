@@ -8,6 +8,7 @@ import cv2
 import imutils
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from tools.utils import get_file_list
 
@@ -68,11 +69,34 @@ def main(
 
     # Group images by their name and then stack them
     gb = df.groupby('image_name')
+    os.makedirs(save_dir, exist_ok=True)
 
-    # TODO: save images as a video of a set of images
-    for idx, (img_name, sample) in enumerate(gb):
+    # Create video writer
+    if output_type == 'video':
+        video_name = 'stacked.mp4'
+        video_path = os.path.join(save_dir, video_name)
+        video_height, video_width = output_size[0], len(input_dirs)*output_size[1]
+        video = cv2.VideoWriter(
+            video_path,
+            cv2.VideoWriter_fourcc(*'mp4v'),
+            fps,
+            (video_width, video_height),
+        )
+
+    for idx, (img_name, sample) in tqdm(enumerate(gb), desc='Stacking', unit=' images'):
         img_paths = sample['image_path'].tolist()
         img = stack_images(img_paths, output_size)
+
+        # Save image
+        if output_type == 'image':
+            save_path = os.path.join(save_dir, img_name)
+            cv2.imwrite(save_path, img)
+        elif output_type == 'video':
+            video.write(img)
+        else:
+            raise ValueError(f'Unknown output_type value: {output_type}')
+
+    video.release() if output_type == 'video' else False
 
 
 def stack_images(
@@ -98,12 +122,12 @@ def stack_images(
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Arrange annotations')
+    parser = argparse.ArgumentParser(description='Stack images')
     parser.add_argument('--input_dirs', nargs='+', required=True, type=str)
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', required=True, type=str)
+    parser.add_argument('--save_dir', default='dataset/stacked', type=str)
     args = parser.parse_args()
 
     main(
