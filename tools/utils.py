@@ -1,10 +1,12 @@
 import os
 import re
+import logging
 from pathlib import Path
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 
 import cv2
 import numpy as np
+from glob import glob
 from struct import unpack
 
 
@@ -84,6 +86,48 @@ def get_file_list(
                     all_files.append(file_path)
     all_files.sort()
     return all_files
+
+
+def get_dir_list(
+    data_dir: str,
+    include_dirs: Optional[Union[List[str], str]] = None,
+    exclude_dirs: Optional[Union[List[str], str]] = None,
+) -> List[str]:
+    """
+    Filter the list of studied directories
+
+    Args:
+        data_dir: source directory with subdirectories
+        include_dirs: directories to be included
+        exclude_dirs: directories to be excluded
+
+    Returns:
+    """
+
+    include_dirs = [include_dirs, ] if isinstance(include_dirs, str) else include_dirs
+    exclude_dirs = [exclude_dirs, ] if isinstance(exclude_dirs, str) else exclude_dirs
+
+    dir_list = []
+    _dir_list = glob(data_dir + '/*/')
+    for series_dir in _dir_list:
+        if include_dirs and Path(series_dir).name not in include_dirs:
+            logging.info(
+                'Skip {:s} because it is not in the include_dirs list'.format(
+                    Path(series_dir).name
+                )
+            )
+            continue
+
+        if exclude_dirs and Path(series_dir).name in exclude_dirs:
+            logging.info(
+                'Skip {:s} because it is in the exclude_dirs list'.format(
+                    Path(series_dir).name
+                )
+            )
+            continue
+
+        dir_list.append(series_dir)
+    return dir_list
 
 
 def extract_body_part(
