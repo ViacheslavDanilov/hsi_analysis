@@ -1,7 +1,9 @@
 import os
 import logging
 import argparse
+import multiprocessing
 from pathlib import Path
+from functools import partial
 from typing import List, Tuple
 
 import cv2
@@ -9,6 +11,7 @@ import imutils
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map
 
 from tools.utils import get_file_list
 
@@ -21,6 +24,77 @@ logging.basicConfig(
     level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
+
+
+def stack_images(
+        img_paths: Tuple[str, ...],
+        output_size: Tuple[int, int],
+) -> np.ndarray:
+
+    # Read images and stack them together
+    img_out = np.zeros([output_size[0], 1, 3], dtype=np.uint8)
+    for img_path in img_paths:
+        img = cv2.imread(img_path)
+        img_size = img.shape[:-1] if len(img.shape) == 3 else img.shape
+        if img_size != output_size:
+            img = imutils.resize(img, height=output_size[0], inter=cv2.INTER_LINEAR)
+        img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        img_out = np.hstack([img_out, img])
+
+    # Delete 1 pixel-width column added at the beginning
+    img_out = np.delete(img_out, 0, 1)
+
+    return img_out
+
+
+def process_group(
+        series_group: tuple,
+        output_type: str,
+        output_size: Tuple[int, int],
+        fps: int,
+        save_dir: str,
+) -> None:
+
+    (study_name, series_name), df = series_group
+
+    if output_type == 'image':
+        output_dir = os.path.join(save_dir, study_name, series_name)
+    else:
+        output_dir = os.path.join(save_dir, study_name)
+    os.makedirs(output_dir, exist_ok=True)
+
+    if output_type == 'video':
+        video_name = f'{series_name}.mp4'
+        video_path = os.path.join(output_dir, video_name)
+        num_studies = len(df['dir_id'].unique())
+        video_height, video_width = output_size[0], num_studies*output_size[1]
+        video = cv2.VideoWriter(
+            video_path,
+            cv2.VideoWriter_fourcc(*'mp4v'),
+            fps,
+            (video_width, video_height),
+        )
+
+    img_groups = df.groupby('image_name')
+
+    for idx, (img_name, df_img) in enumerate(img_groups):
+
+        assert idx + 1 == int(Path(img_name).stem), 'Wavelength and image name mismatch'
+
+        # Stack images
+        img_paths = df_img['image_path'].tolist()
+        img = stack_images(img_paths, output_size)
+
+        # Save image
+        if output_type == 'image':
+            save_path = os.path.join(output_dir, img_name)
+            cv2.imwrite(save_path, img)
+        elif output_type == 'video':
+            video.write(img)
+        else:
+            raise ValueError(f'Unknown output_type value: {output_type}')
+
+    video.release() if output_type == 'video' else False
 
 
 def main(
@@ -59,65 +133,31 @@ def main(
     # Create a dataframe with all images
     df = pd.DataFrame()
     for idx, img_dir in enumerate(img_dirs):
-        _dir_list = map(lambda path: path.split(os.sep)[2], img_dir)
+        _study_list = map(lambda path: Path(path).parents[1].name, img_dir)
+        _series_list = map(lambda path: Path(path).parents[0].name, img_dir)
         _img_names = map(lambda path: os.path.basename(path), img_dir)
         _df = pd.DataFrame(img_dir, columns=['image_path'])
         _df['image_name'] = list(_img_names)
-        _df['dir_name'] = list(_dir_list)
+        _df['study'] = list(_study_list)
+        _df['series'] = list(_series_list)
         _df['dir_id'] = idx + 1
         df = pd.concat([df, _df], ignore_index=True)
 
-    # Group images by their name and then stack them
-    gb = df.groupby('image_name')
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Create video writer
-    if output_type == 'video':
-        video_name = 'stacked.mp4'
-        video_path = os.path.join(save_dir, video_name)
-        video_height, video_width = output_size[0], len(input_dirs)*output_size[1]
-        video = cv2.VideoWriter(
-            video_path,
-            cv2.VideoWriter_fourcc(*'mp4v'),
-            fps,
-            (video_width, video_height),
-        )
-
-    for idx, (img_name, sample) in tqdm(enumerate(gb), desc='Stacking', unit=' images'):
-        img_paths = sample['image_path'].tolist()
-        img = stack_images(img_paths, output_size)
-
-        # Save image
-        if output_type == 'image':
-            save_path = os.path.join(save_dir, img_name)
-            cv2.imwrite(save_path, img)
-        elif output_type == 'video':
-            video.write(img)
-        else:
-            raise ValueError(f'Unknown output_type value: {output_type}')
-
-    video.release() if output_type == 'video' else False
-
-
-def stack_images(
-        img_paths: Tuple[str, ...],
-        output_size: Tuple[int, int],
-) -> np.ndarray:
-
-    # Read images and stack them together
-    img_out = np.zeros([output_size[0], 1, 3], dtype=np.uint8)
-    for img_path in img_paths:
-        img = cv2.imread(img_path)
-        img_size = img.shape[:-1] if len(img.shape) == 3 else img.shape
-        if img_size != output_size:
-            img = imutils.resize(img, height=output_size[0], inter=cv2.INTER_LINEAR)
-        img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-        img_out = np.hstack([img_out, img])
-
-    # Delete 1 pixel-width column added at the beginning
-    img_out = np.delete(img_out, 0, 1)
-
-    return img_out
+    # Group images and process them
+    gb = df.groupby(['study', 'series'])
+    num_cores = multiprocessing.cpu_count()
+    processing_func = partial(
+        process_group,
+        output_type=output_type,
+        output_size=output_size,
+        fps=fps,
+        save_dir=save_dir,
+    )
+    process_map(
+        processing_func,
+        tqdm(gb, desc='Stacking images', unit=' groups'),
+        max_workers=num_cores,
+    )
 
 
 if __name__ == "__main__":
