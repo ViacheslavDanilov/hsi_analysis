@@ -1,19 +1,13 @@
-import os
-import logging
 import argparse
 import multiprocessing
-from pathlib import Path
 from functools import partial
-from typing import List, Tuple
 
-import cv2
 import imutils
-import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from tools.utils import get_file_list, read_hsi, extract_body_part, extract_time_stamp, get_color_map
+from tools.utils import *
 
 os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
@@ -28,13 +22,13 @@ logger = logging.getLogger(__name__)
 
 def process_hsi(
         file_path: str,
-        data_type: str,
-        color_map: str,
-        apply_equalization: bool,
-        output_type: str,
-        output_size: Tuple[int, int],
-        fps: int,
         save_dir: str,
+        data_type: str = 'absorbance',
+        color_map: str = None,
+        apply_equalization: bool = False,
+        output_type: str = 'image',
+        output_size: Tuple[int, int] = (744, 1000),
+        fps: int = 15,
 ) -> List:
 
     assert output_type == 'image' or output_type == 'video', f'Incorrect output_type: {output_type}'
@@ -133,17 +127,21 @@ def process_hsi(
 
 def main(
         input_dir: str,
-        data_type: str,
-        color_map: str,
-        apply_equalization: bool,
-        output_type: str,
-        output_size: Tuple[int, int],
-        fps: int,
         save_dir: str,
+        data_type: str = 'absorbance',
+        color_map: str = None,
+        apply_equalization: bool = False,
+        output_type: str = 'image',
+        output_size: Tuple[int, int] = (744, 1000),
+        fps: int = 15,
+        include_dirs: Optional[Union[List[str], str]] = None,
+        exclude_dirs: Optional[Union[List[str], str]] = None,
 ):
 
     # Log main parameters
     logger.info(f'Input dir..........: {input_dir}')
+    logger.info(f'Included dirs......: {include_dirs}')
+    logger.info(f'Excluded dirs......: {exclude_dirs}')
     logger.info(f'Output dir.........: {save_dir}')
     logger.info(f'Data type..........: {data_type}')
     logger.info(f'Color map..........: {color_map}')
@@ -153,9 +151,16 @@ def main(
     logger.info(f'FPS................: {fps if output_type == "video" else None}')
     logger.info('')
 
+    # Filter the list of studied directories
+    study_dirs = get_dir_list(
+        data_dir=input_dir,
+        include_dirs=include_dirs,
+        exclude_dirs=exclude_dirs,
+    )
+
     # Get list of HSI files
     hsi_paths = get_file_list(
-        src_dirs=input_dir,
+        src_dirs=study_dirs,
         include_template='',
         ext_list='.dat',
     )
@@ -201,6 +206,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Convert Hyperspectral Images')
     parser.add_argument('--input_dir', default='dataset/source', type=str)
+    parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
+    parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--data_type',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
     parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
     parser.add_argument('--apply_equalization', action='store_true')
@@ -212,6 +219,8 @@ if __name__ == '__main__':
 
     main(
         input_dir=args.input_dir,
+        include_dirs=args.include_dirs,
+        exclude_dirs=args.exclude_dirs,
         data_type=args.data_type,
         color_map=args.color_map,
         apply_equalization=args.apply_equalization,
