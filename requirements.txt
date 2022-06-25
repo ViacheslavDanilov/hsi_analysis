@@ -11,3 +11,4 @@ tqdm==4.64.0
 ipython==8.3.0
 xlsxwriter==3.0.3
 imutils==0.5.4
+ffmpeg-python==0.2.0
