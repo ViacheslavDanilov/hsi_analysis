@@ -2,6 +2,7 @@ import argparse
 import multiprocessing
 from functools import partial
 
+import ffmpeg
 import imutils
 import pandas as pd
 from tqdm import tqdm
@@ -53,13 +54,12 @@ def process_hsi(
 
     # Create video writer
     if output_type == 'video':
-        video_name = f'{hsi_name}.mp4'
-        video_path = os.path.join(output_dir, video_name)
+        video_path_temp = os.path.join(output_dir, f'{hsi_name}_temp.mp4')
         _img = imutils.resize(hsi[:, :, 0], height=output_size[0], inter=cv2.INTER_LINEAR)
         _img_size = _img.shape[:-1] if len(_img.shape) == 3 else _img.shape
         video_height, video_width = _img_size
         video = cv2.VideoWriter(
-            video_path,
+            video_path_temp,
             cv2.VideoWriter_fourcc(*'mp4v'),
             fps,
             (video_width, video_height),
@@ -119,6 +119,14 @@ def process_hsi(
             raise ValueError(f'Unknown output_type value: {output_type}')
 
     video.release() if output_type == 'video' else False
+
+    # Replace OpenCV videos with FFmpeg ones
+    if output_type == 'video':
+        video_path = os.path.join(output_dir, f'{hsi_name}.mp4')
+        stream = ffmpeg.input(video_path_temp)
+        stream = ffmpeg.output(stream, video_path, vcodec='libx264', video_bitrate='10M')
+        ffmpeg.run(stream, quiet=True, overwrite_output=True)
+        os.remove(video_path_temp)
 
     logger.info(f'HSI processed......: {Path(file_path).name}')
 
