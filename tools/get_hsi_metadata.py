@@ -1,14 +1,11 @@
-import os
-import logging
 import argparse
 import multiprocessing
-from pathlib import Path
 
 import pandas as pd
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from tools.utils import get_file_list, read_hsi, extract_body_part, extract_time_stamp
+from tools.utils import *
 
 os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
@@ -28,8 +25,11 @@ def process_hsi(
     hsi = read_hsi(file_path)
     body_part = extract_body_part(file_path)
     date, time = extract_time_stamp(filename=Path(file_path).name)
+    test_dir = Path(file_path).parents[2].name
+
     metadata = {
         'Source dir': str(Path(file_path).parent),
+        'Test name': str(test_dir),
         'HSI name': Path(file_path).name,
         'Date': date,
         'Time': time,
@@ -47,15 +47,26 @@ def process_hsi(
 def main(
         input_dir: str,
         save_dir: str,
+        include_dirs: Optional[Union[List[str], str]] = None,
+        exclude_dirs: Optional[Union[List[str], str]] = None,
 ):
     # Log main parameters
     logger.info(f'Input dir..........: {input_dir}')
+    logger.info(f'Included dirs......: {include_dirs}')
+    logger.info(f'Excluded dirs......: {exclude_dirs}')
     logger.info(f'Output dir.........: {save_dir}')
     logger.info('')
 
+    # Filter the list of studied directories
+    study_dirs = get_dir_list(
+        data_dir=input_dir,
+        include_dirs=include_dirs,
+        exclude_dirs=exclude_dirs,
+    )
+
     # Get list of HSI files
     hsi_paths = get_file_list(
-        src_dirs=input_dir,
+        src_dirs=study_dirs,
         include_template='',
         ext_list='.dat',
     )
@@ -69,10 +80,11 @@ def main(
         max_workers=num_cores,
     )
 
-    # Save metadata as an xlsx file
+    # Save metadata as an XLSX file
     df = pd.DataFrame(metadata)
     os.makedirs(save_dir, exist_ok=True)
     save_path = os.path.join(save_dir, 'HSI metadata.xlsx')
+    df.index += 1
     df.to_excel(
         save_path,
         sheet_name='Metadata',
@@ -87,11 +99,15 @@ def main(
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Data processing')
-    parser.add_argument('--input_dir', default='dataset', type=str)
+    parser.add_argument('--input_dir', default='dataset/source', type=str)
+    parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
+    parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--save_dir', default='calculations', type=str)
     args = parser.parse_args()
 
     main(
         input_dir=args.input_dir,
+        include_dirs=args.include_dirs,
+        exclude_dirs=args.exclude_dirs,
         save_dir=args.save_dir,
     )
