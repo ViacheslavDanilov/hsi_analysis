@@ -102,6 +102,7 @@ def get_dir_list(
         exclude_dirs: directories to be excluded
 
     Returns:
+        dir_list: filtered list of studied directories
     """
 
     include_dirs = [include_dirs, ] if isinstance(include_dirs, str) else include_dirs
@@ -109,24 +110,24 @@ def get_dir_list(
 
     dir_list = []
     _dir_list = glob(data_dir + '/*/')
-    for series_dir in _dir_list:
-        if include_dirs and Path(series_dir).name not in include_dirs:
+    for studied_dir in _dir_list:
+        if include_dirs and Path(studied_dir).name not in include_dirs:
             logging.info(
                 'Skip {:s} because it is not in the include_dirs list'.format(
-                    Path(series_dir).name
+                    Path(studied_dir).name
                 )
             )
             continue
 
-        if exclude_dirs and Path(series_dir).name in exclude_dirs:
+        if exclude_dirs and Path(studied_dir).name in exclude_dirs:
             logging.info(
                 'Skip {:s} because it is in the exclude_dirs list'.format(
-                    Path(series_dir).name
+                    Path(studied_dir).name
                 )
             )
             continue
 
-        dir_list.append(series_dir)
+        dir_list.append(studied_dir)
     return dir_list
 
 
