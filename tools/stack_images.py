@@ -4,16 +4,17 @@ import argparse
 import multiprocessing
 from pathlib import Path
 from functools import partial
-from typing import List, Tuple
+from typing import List, Tuple, Union, Optional
 
 import cv2
+import ffmpeg
 import imutils
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from tools.utils import get_file_list
+from tools.utils import get_file_list, get_dir_list
 
 os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 def stack_images(
         img_paths: Tuple[str, ...],
-        output_size: Tuple[int, int],
+        output_size: Tuple[int, int] = (744, 1000),
 ) -> np.ndarray:
 
     # Read images and stack them together
@@ -49,10 +50,10 @@ def stack_images(
 
 def process_group(
         series_group: tuple,
-        output_type: str,
-        output_size: Tuple[int, int],
-        fps: int,
         save_dir: str,
+        output_type: str = 'image',
+        output_size: Tuple[int, int] = (744, 1000),
+        fps: int = 15,
 ) -> None:
 
     (study_name, series_name), df = series_group
@@ -64,12 +65,11 @@ def process_group(
     os.makedirs(output_dir, exist_ok=True)
 
     if output_type == 'video':
-        video_name = f'{series_name}.mp4'
-        video_path = os.path.join(output_dir, video_name)
+        video_path_temp = os.path.join(output_dir, f'{series_name}_temp.mp4')
         num_studies = len(df['dir_id'].unique())
         video_height, video_width = output_size[0], num_studies*output_size[1]
         video = cv2.VideoWriter(
-            video_path,
+            video_path_temp,
             cv2.VideoWriter_fourcc(*'mp4v'),
             fps,
             (video_width, video_height),
@@ -96,31 +96,50 @@ def process_group(
 
     video.release() if output_type == 'video' else False
 
+    # Replace OpenCV videos with FFmpeg ones
+    if output_type == 'video':
+        video_path = os.path.join(output_dir, f'{series_name}.mp4')
+        stream = ffmpeg.input(video_path_temp)
+        stream = ffmpeg.output(stream, video_path, vcodec='libx264', video_bitrate='10M')
+        ffmpeg.run(stream, quiet=True, overwrite_output=True)
+        os.remove(video_path_temp)
+
 
 def main(
         input_dirs: List[str],
-        output_type: str,
-        output_size: Tuple[int, int],
-        fps: int,
         save_dir: str,
+        output_type: str = 'image',
+        output_size: Tuple[int, int] = (744, 1000),
+        fps: int = 15,
+        include_dirs: Optional[Union[List[str], str]] = None,
+        exclude_dirs: Optional[Union[List[str], str]] = None,
 ) -> None:
     """
     Stack images from multiple directories into one image.
 
     Args:
         input_dirs: list of dirs with source images
+        save_dir: directory where arranged images are saved
         output_type: whether to save it as a video or image
         output_size: new size of images (the algorithm keeps the aspect ratio)
         fps: frames per second of the output video
-        save_dir: directory where arranged images are saved
+        include_dirs: directories to be included
+        exclude_dirs: directories to be excluded
     Returns: None
     """
 
     # Collect images across all dirs
     img_dirs = []
     for input_dir in input_dirs:
+
+        study_dirs = get_dir_list(
+            data_dir=input_dir,
+            include_dirs=include_dirs,
+            exclude_dirs=exclude_dirs,
+        )
+
         _img_paths = get_file_list(
-            src_dirs=input_dir,
+            src_dirs=study_dirs,
             include_template='',
             ext_list='.png',
         )
@@ -164,7 +183,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Stack images')
     parser.add_argument('--input_dirs', nargs='+', required=True, type=str)
-    parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
+    parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
+    parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
+    parser.add_argument('--output_type', default='video', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
     parser.add_argument('--save_dir', default='dataset/stacked', type=str)
@@ -172,6 +193,8 @@ if __name__ == "__main__":
 
     main(
         input_dirs=args.input_dirs,
+        include_dirs=args.include_dirs,
+        exclude_dirs=args.exclude_dirs,
         output_type=args.output_type,
         output_size=args.output_size,
         fps=args.fps,
