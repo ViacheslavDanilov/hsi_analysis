@@ -12,3 +12,4 @@ ipython==8.3.0
 xlsxwriter==3.0.3
 imutils==0.5.4
 ffmpeg-python==0.2.0
+supervisely==6.60.2
