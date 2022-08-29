@@ -145,3 +145,6 @@ calculations/
 
 # Logs directory
 logs/
+
+# Exclude temporal files
+temp/
