@@ -45,59 +45,49 @@ def get_palette(
 def read_sly_project(
     project_dir: str,
     include_dirs: Optional[List[str]] = None,
-    exclude_dirs: Optional[List[str]] = None
+    exclude_dirs: Optional[List[str]] = None,
 ) -> pd.DataFrame:
 
-    logging.info('Processing of {:s}'.format(project_dir))
+    logging.info(f'Dataset dir..........: {project_dir}')
     assert os.path.exists(project_dir) and os.path.isdir(project_dir), 'Wrong project dir: {}'.format(project_dir)
-    # FIXME: read project with video rather than images
-    project = sly.Project(
+    project = sly.VideoProject(
         directory=project_dir,
         mode=sly.OpenMode.READ,
     )
 
-    filenames: List[str] = []
-    img_paths: List[str] = []
-    mask_paths: List[str] = []
+    stems: List[str] = []
+    test_names: List[str] = []
+    video_paths: List[str] = []
     ann_paths: List[str] = []
-    dataset_names: List[str] = []
 
     for dataset in project:
-        dataset_name = dataset.name
-        if include_dirs and dataset_name not in include_dirs:
-            logging.info(
-                'Skip {:s} because it is not in the include_datasets list'.format(
-                    Path(dataset_name).name
-                )
-            )
-            continue
-        if exclude_dirs and dataset_name in exclude_dirs:
-            logging.info(
-                'Skip {:s} because it is in the exclude_datasets list'.format(
-                    Path(dataset_name).name
-                )
-            )
+        test_name = dataset.name
+
+        if include_dirs and test_name not in include_dirs:
+            logging.info(f'Excluded dir.........: {test_name}')
             continue
 
+        if exclude_dirs and test_name in exclude_dirs:
+            logging.info(f'Excluded dir.........: {test_name}')
+            continue
+
+        logging.info(f'Included dir.........: {test_name}')
         for item_name in dataset:
-            img_path, ann_path = dataset.get_item_paths(item_name)
-            filename = Path(img_path).stem
-            mask_name = '{:s}.png'.format(filename)
-            mask_path = os.path.join(dataset.directory, 'masks_machine', mask_name)
-
-            filenames.append(filename)
-            img_paths.append(img_path)
-            mask_paths.append(mask_path)
+            video_path, ann_path = dataset.get_item_paths(item_name)
+            stem = Path(video_path).stem
+            stems.append(stem)
+            video_paths.append(video_path)
             ann_paths.append(ann_path)
-            dataset_names.append(dataset_name)
+            test_names.append(test_name)
 
-    df = pd.DataFrame.from_dict({
-        'img_path': img_paths,
-        'ann_path': ann_paths,
-        'mask_path': mask_paths,
-        'dataset': dataset_names,
-        'filename': filenames,
-    })
+    df = pd.DataFrame.from_dict(
+        {
+            'test': test_names,
+            'stem': stems,
+            'video_path': video_paths,
+            'ann_path': ann_paths,
+        }
+    )
 
     return df
 
