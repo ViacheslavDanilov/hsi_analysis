@@ -1,6 +1,7 @@
 import json
 import argparse
 
+import numpy as np
 from tqdm import tqdm
 from sklearn.utils import class_weight
 from sklearn.model_selection import train_test_split
@@ -13,93 +14,94 @@ logging.basicConfig(
     datefmt='%d.%m.%Y %H:%M:%S',
     filename='logs/{:s}.log'.format(Path(__file__).stem),
     filemode='w',
-    level=logging.DEBUG,
+    level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
 
 
-def log_dataset(
-        dataset_name: str,
-        train_images: int,
-        val_images: int,
-        test_images: int,
-) -> None:
-    logger.info('')
-    logger.info('Dataset      : {:s}'.format(dataset_name))
-    logger.info('Total images : {:d}'.format(train_images + val_images + test_images))
-    logger.info('Train images : {:d}'.format(train_images))
-    logger.info('Val images   : {:d}'.format(val_images))
-    logger.info('Test images  : {:d}'.format(test_images))
+def crop(
+        input_img: np.ndarray,
+        img_type: str = 'absorbance',
+) -> np.ndarray:
+
+    assert input_img.shape[1] % 3 == 0, 'Input image width should be divisible by 3 i.e. contain 3 sub-images'
+
+    img_width = int(input_img.shape[1] / 3)
+    if img_type == 'absorbance':
+        idx = 0
+    elif img_type == 'hsv':
+        idx = 1
+    elif img_type == 'reflectance':
+        idx = 2
+    else:
+        raise ValueError(f'Invalid img_type: {img_type}')
+
+    output_img = input_img[:, idx * img_width:(idx + 1) * img_width]
+
+    return output_img
+
 
 
 def main(
-        df_project: pd.DataFrame,
+        df: pd.DataFrame,
         class_names: Tuple[str],
         exclude_empty_masks: bool,
         use_smoothing: bool,
-        train_size: float,
-        test_size: float,
-        seed: int,
+        img_type: str,
         save_dir: str,
 ) -> None:
 
-    val_size = 1 - train_size - test_size
-    assert train_size + val_size + test_size == 1, 'The sum of subset ratios must be equal to 1'
+    logger.info(f'Classes..............: {class_names}')
+    logger.info(f'Number of classes....: {len(class_names)}')
+    logger.info(f'Exclude empty masks..: {exclude_empty_masks}')
+    logger.info(f'Output directory.....: {save_dir}')
 
-    logger.info('Classes              : {}'.format(class_names))
-    logger.info('Number of classes    : {}'.format(len(class_names)))
-    logger.info('Exclude empty masks  : {}'.format(exclude_empty_masks))
-    logger.info('Output directory     : {}'.format(save_dir))
-    logger.info('Train/Val/Test split : {:.2f} / {:.2f} / {:.2f}'.format(train_size, val_size, test_size))
-    datasets = list(set(df_project.dataset))
+    tests = list(set(df['test']))
+    logger.info(f'Number of tests......: {len(tests)}')
 
-    # Split dataset into train, val and test subsets
-    df_train = pd.DataFrame()
-    df_val = pd.DataFrame()
-    df_test = pd.DataFrame()
-    for dataset in datasets:
-        df_dataset = df_project[df_project.dataset == dataset]
-        df_dataset.reset_index(drop=True, inplace=True)
-        _df_train, df_val_test = train_test_split(df_dataset, train_size=train_size, random_state=seed)
-        _df_val, _df_test = train_test_split(df_val_test, test_size=test_size/(val_size + test_size), random_state=seed)
-        log_dataset(dataset, len(_df_train), len(_df_val), len(_df_test))
-        df_train = pd.concat([df_train, _df_train])
-        df_val = pd.concat([df_val, _df_val])
-        df_test = pd.concat([df_test, _df_test])
+    # FIXME: Split dataset into train, val and test subsets
+    # Iterate over tests
+    for test in tests:
+        df_test = df[df['test'] == test]
 
-    df_train.sort_values(by=['img_path'], inplace=True)
-    df_train.reset_index(drop=True, inplace=True)
-    df_train['subset'] = 'train'
+        # # Iterate over videos
+        for idx, row in tqdm(df_test.iterrows(), desc='Data conversion', unit=' video'):
+            video_path = row['video_path']
+            stem = row['stem']
 
-    df_val.sort_values(by=['img_path'], inplace=True)
-    df_val.reset_index(drop=True, inplace=True)
-    df_val['subset'] = 'val'
+            # Create image and annotation directories
+            img_dir = os.path.join(save_dir, test, stem, 'img')
+            os.makedirs(img_dir, exist_ok=True)
 
-    df_test.sort_values(by=['img_path'], inplace=True)
-    df_test.reset_index(drop=True, inplace=True)
-    df_test['subset'] = 'test'
+            # Read video and save images
+            # TODO: uncomment later
+            # video = cv2.VideoCapture(video_path)
+            # count = 0
+            # while True:
+            #     success, _img = video.read()
+            #     if not success:
+            #         break
+            #     img = crop(
+            #         input_img=_img,
+            #         img_type=img_type
+            #     )
+            #     img_path = os.path.join(img_dir, f'image_{count:02d}.png')
+            #     cv2.imwrite(img_path, img)
+            #     count += 1
 
-    log_dataset('Final', len(df_train), len(df_val), len(df_test))
+            # TODO: Read json and save masks
+            ann_path = row['ann_path']
+            ann_dir = os.path.join(save_dir, test, stem, 'ann')
+            os.makedirs(ann_dir, exist_ok=True)
 
-    os.makedirs(save_dir) if not os.path.isdir(save_dir) else False
-    df_final = pd.concat([df_train, df_val, df_test], axis=0)
-    df_final.reset_index(drop=True, inplace=True)
-    save_path = os.path.join(save_dir, 'dataset.xlsx')
-    df_final.to_excel(save_path, sheet_name='Dataset', index=False, startrow=0, startcol=0)
-    logger.info('Dataset metadata save to {:s}'.format(save_path))
+            f = open(ann_path)
+            ann_data = json.load(f)
+            img_height, img_width = (
+                ann_data['size']['height'],
+                ann_data['size']['width'],
+            )
 
-    # Create subset dirs
-    subset_dirs = {
-        'img_dir': {},
-        'ann_dir': {},
-    }
-    for ds_dir in subset_dirs:
-        for subset_dir in ['train', 'val', 'test']:
-            _dir = os.path.join(save_dir, ds_dir, subset_dir)
-            subset_dirs[ds_dir][subset_dir] = _dir
-            os.makedirs(_dir) if not os.path.isdir(_dir) else False
-
-    # Iterate over image-annotation pairs
+    # TODO: Iterate over image-annotation pairs
     data = np.array([], dtype=np.uint8)
     for idx, row in tqdm(df_final.iterrows(), desc='Image processing', unit=' images'):
         filename = row['filename']
@@ -184,18 +186,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Dataset conversion')
     parser.add_argument('--project_dir', required=True, type=str)
+    parser.add_argument('--annotator', default='ViacheslavDanilov', type=str, choices=['MartinaDL', 'ViacheslavDanilov'])
     parser.add_argument('--class_names', nargs='+', default=CLASSES, type=str)
     parser.add_argument('--exclude_empty_masks', action='store_true')
     parser.add_argument('--use_smoothing', action='store_true')
+    parser.add_argument('--img_type',  default='absorbance', type=str, choices=['absorbance', 'hsv', 'reflectance'])
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--train_size', default=0.80, type=float)
-    parser.add_argument('--test_size', default=0.10, type=float)
-    parser.add_argument('--seed', default=11, type=int)
     parser.add_argument('--save_dir', required=True, type=str)
     args = parser.parse_args()
 
-    # FIXME: read project with video rather than images
     df = read_sly_project(
         project_dir=args.project_dir,
         include_dirs=args.include_dirs,
@@ -203,13 +203,11 @@ if __name__ == '__main__':
     )
 
     main(
-        df_project=df,
+        df=df,
         class_names=tuple(args.class_names),
         exclude_empty_masks=args.exclude_empty_masks,
         use_smoothing=args.use_smoothing,
-        train_size=args.train_size,
-        test_size=args.test_size,
-        seed=args.seed,
+        img_type=args.img_type,
         save_dir=args.save_dir,
     )
 
