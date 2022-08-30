@@ -19,7 +19,7 @@ from tools.utils import get_file_list, get_dir_list
 os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%d.%m.%Y %I:%M:%S',
+    datefmt='%d.%m.%Y %H:%M:%S',
     filename='logs/{:s}.log'.format(Path(__file__).stem),
     filemode='w',
     level=logging.INFO,
