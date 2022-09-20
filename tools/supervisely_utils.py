@@ -88,7 +88,8 @@ def read_sly_project(
             'ann_path': ann_paths,
         }
     )
-
+    df.sort_values(['test', 'stem'], inplace=True)
+    df.reset_index(drop=True, inplace=True)
     return df
 
 
