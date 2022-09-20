@@ -201,3 +201,25 @@ def get_color_map(
     else:
         raise ValueError(f'Unknown color map: {color_map}')
     return cmap
+
+
+def crop_image(
+        input_img: np.ndarray,
+        img_type: str = 'absorbance',
+) -> np.ndarray:
+
+    assert input_img.shape[1] % 2 == 0, 'Input image width should be divisible by 2 (contain 2 sub-images)'
+
+    img_width = int(input_img.shape[1] / 2)
+    if img_type == 'absorbance':
+        idx = 0
+    elif img_type == 'hsv':
+        idx = 1
+    elif img_type == 'reflectance':
+        idx = 2
+    else:
+        raise ValueError(f'Invalid img_type: {img_type}')
+
+    output_img = input_img[:, idx * img_width:(idx + 1) * img_width]
+
+    return output_img
