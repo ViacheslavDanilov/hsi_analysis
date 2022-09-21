@@ -14,7 +14,7 @@ import supervisely_lib as sly
 from scipy.ndimage import binary_opening, binary_fill_holes
 
 
-# TODO: revise class colors and add artifact if needed
+# TODO: remove it in case of usage object detection approach
 def get_class_color(
         class_name: str,
 ) -> List[int]:
@@ -55,40 +55,40 @@ def read_sly_project(
         mode=sly.OpenMode.READ,
     )
 
-    stems: List[str] = []
-    test_names: List[str] = []
+    series_list: List[str] = []
+    study_list: List[str] = []
     video_paths: List[str] = []
     ann_paths: List[str] = []
 
     for dataset in project:
-        test_name = dataset.name
+        study = dataset.name
 
-        if include_dirs and test_name not in include_dirs:
-            logging.info(f'Excluded dir.........: {test_name}')
+        if include_dirs and study not in include_dirs:
+            logging.info(f'Excluded dir.........: {study}')
             continue
 
-        if exclude_dirs and test_name in exclude_dirs:
-            logging.info(f'Excluded dir.........: {test_name}')
+        if exclude_dirs and study in exclude_dirs:
+            logging.info(f'Excluded dir.........: {study}')
             continue
 
-        logging.info(f'Included dir.........: {test_name}')
+        logging.info(f'Included dir.........: {study}')
         for item_name in dataset:
             video_path, ann_path = dataset.get_item_paths(item_name)
-            stem = Path(video_path).stem
-            stems.append(stem)
+            series = Path(video_path).stem
+            series_list.append(series)
             video_paths.append(video_path)
             ann_paths.append(ann_path)
-            test_names.append(test_name)
+            study_list.append(study)
 
     df = pd.DataFrame.from_dict(
         {
-            'test': test_names,
-            'stem': stems,
+            'study': study_list,
+            'series': series_list,
             'video_path': video_paths,
             'ann_path': ann_paths,
         }
     )
-    df.sort_values(['test', 'stem'], inplace=True)
+    df.sort_values(['study', 'series'], inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
 
