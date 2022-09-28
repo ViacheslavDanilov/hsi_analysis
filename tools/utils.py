@@ -235,9 +235,9 @@ def crop_image(
         input_img: np.ndarray,
         img_type: str = 'absorbance',
 ) -> np.ndarray:
-    assert input_img.shape[1] % 2 == 0, 'Input image width should be divisible by 2 (contain 2 sub-images)'
+    assert input_img.shape[1] % 3 == 0, 'Input image width should be divisible by 3 (contain 3 sub-images)'
 
-    img_width = int(input_img.shape[1] / 2)
+    img_width = int(input_img.shape[1] / 3)
     if img_type == 'absorbance':
         idx = 0
     elif img_type == 'hsv':
