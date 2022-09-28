@@ -19,27 +19,32 @@ logger = logging.getLogger(__name__)
 
 
 def process_hsi(
-        file_path: str,
+        hsi_path: str,
 ) -> dict:
 
-    hsi = read_hsi(file_path)
-    body_part = extract_body_part(file_path)
-    date, time = extract_time_stamp(filename=Path(file_path).name)
-    test_dir = Path(file_path).parents[2].name
+    hsi = read_hsi(hsi_path)
+    study_name = get_study_name(path=hsi_path)
+    series_name = get_series_name(path=hsi_path)
+    body_part = extract_body_part(path=hsi_path)
+    date, time = extract_time_stamp(path=hsi_path)
+    temperature_idx, temperature = extract_temperature(path=hsi_path)
 
     metadata = {
-        'Source dir': str(Path(file_path).parent),
-        'Test name': str(test_dir),
-        'HSI name': Path(file_path).name,
+        'Source dir': str(Path(hsi_path).parent),
+        'Study name': study_name,
+        'Series name': series_name,
+        'HSI name': str(Path(hsi_path).name),
         'Date': date,
         'Time': time,
         'Body part': body_part,
         'Height': hsi.shape[0],
         'Width': hsi.shape[1],
         'Depth': hsi.shape[2],
-        'Size': os.path.getsize(file_path) / (10**6),
+        'Size': os.path.getsize(hsi_path) / (10 ** 6),
+        'Temperature ID': temperature_idx,
+        'Temperature': temperature,
     }
-    logger.info(f'Metadata extracted.: {Path(file_path).name}')
+    logger.info(f'Metadata extracted.: {hsi_path}')
 
     return metadata
 
@@ -99,10 +104,10 @@ def main(
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Data processing')
-    parser.add_argument('--input_dir', default='dataset/source', type=str)
+    parser.add_argument('--input_dir', default='dataset/HSI', type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--save_dir', default='calculations', type=str)
+    parser.add_argument('--save_dir', default='dataset', type=str)
     args = parser.parse_args()
 
     main(

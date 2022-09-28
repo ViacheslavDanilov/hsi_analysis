@@ -54,9 +54,9 @@ def read_hsi(
 
 
 def get_file_list(
-    src_dirs: Union[List[str], str],
-    ext_list: Union[List[str], str],
-    include_template: str = '',
+        src_dirs: Union[List[str], str],
+        ext_list: Union[List[str], str],
+        include_template: str = '',
 ) -> List[str]:
     """
     Get list of files with the specified extensions
@@ -79,8 +79,8 @@ def get_file_list(
                 file_ext = file_ext.lower()
                 dir_name = os.path.basename(root)
                 if (
-                    file_ext in ext_list
-                    and include_template in dir_name
+                        file_ext in ext_list
+                        and include_template in dir_name
                 ):
                     file_path = os.path.join(root, file)
                     all_files.append(file_path)
@@ -89,9 +89,9 @@ def get_file_list(
 
 
 def get_dir_list(
-    data_dir: str,
-    include_dirs: Optional[Union[List[str], str]] = None,
-    exclude_dirs: Optional[Union[List[str], str]] = None,
+        data_dir: str,
+        include_dirs: Optional[Union[List[str], str]] = None,
+        exclude_dirs: Optional[Union[List[str], str]] = None,
 ) -> List[str]:
     """
     Filter the list of studied directories
@@ -131,6 +131,20 @@ def get_dir_list(
     return dir_list
 
 
+def get_study_name(
+        path: str,
+) -> str:
+    study_name = Path(path).parts[-3]
+    return study_name
+
+
+def get_series_name(
+        path: str,
+) -> str:
+    series_name = Path(path).parts[-2]
+    return series_name
+
+
 def extract_body_part(
         path: str,
 ) -> str:
@@ -157,30 +171,44 @@ def extract_body_part(
     return body_part
 
 
+def extract_temperature(
+        path: str,
+) -> Tuple[int, str]:
+    series_name = get_series_name(path)
+
+    _temperature_idx = re.findall(r'\d+', series_name)
+    temperature_idx = int(_temperature_idx[3])
+
+    idx = series_name.index('=') + 1
+    temperature = series_name[idx:]
+
+    return temperature_idx, temperature
+
+
 def extract_time_stamp(
-        filename: str,
+        path: str,
 ) -> Tuple[str, str]:
     """
-    Extract a time stamp from the HSI filename
+    Extract a time stamp from the HSI path
 
     Args:
-        filename: a filename with an unstructured time stamp
+        path: a path to filename with an unstructured time stamp
     Returns:
         date: a date string in format DD.MM.YYYY
         time: a time string in format HH:MM:SS
     """
 
+    study_name = get_study_name(path)
+    series_name = get_series_name(path)
+
     try:
-        datetime_list = re.findall(r'\d+', filename)
-        if len(datetime_list) == 6:
-            date = f'{datetime_list[2]}.{datetime_list[1]}.{datetime_list[0]}'
-            time = f'{datetime_list[3]}:{datetime_list[4]}:{datetime_list[5]}'
-        else:
-            date = 'Invalid date'
-            time = 'Invalid time'
+        date_list = re.findall(r'\d+', study_name)
+        time_list = re.findall(r'\d+', series_name)
+        date = f'{date_list[0]}.{date_list[1]}.{date_list[2]}'
+        time = f'{time_list[0]}:{time_list[1]}:{time_list[2]}'
     except Exception as e:
-        date = 'Invalid date'
-        time = 'Invalid time'
+        date = 'Invalid_date'
+        time = 'Invalid_time'
 
     return date, time
 
@@ -207,10 +235,9 @@ def crop_image(
         input_img: np.ndarray,
         img_type: str = 'absorbance',
 ) -> np.ndarray:
+    assert input_img.shape[1] % 3 == 0, 'Input image width should be divisible by 3 (contain 3 sub-images)'
 
-    assert input_img.shape[1] % 2 == 0, 'Input image width should be divisible by 2 (contain 2 sub-images)'
-
-    img_width = int(input_img.shape[1] / 2)
+    img_width = int(input_img.shape[1] / 3)
     if img_type == 'absorbance':
         idx = 0
     elif img_type == 'hsv':

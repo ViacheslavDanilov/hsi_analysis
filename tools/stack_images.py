@@ -14,7 +14,12 @@ import pandas as pd
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from tools.utils import get_file_list, get_dir_list
+from tools.utils import (
+    get_file_list,
+    get_dir_list,
+    get_study_name,
+    get_series_name,
+)
 
 os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
@@ -115,7 +120,7 @@ def main(
         exclude_dirs: Optional[Union[List[str], str]] = None,
 ) -> None:
     """
-    Stack images from multiple directories into one image.
+    Stack images from multiple directories into one image
 
     Args:
         input_dirs: list of dirs with source images
@@ -152,8 +157,8 @@ def main(
     # Create a dataframe with all images
     df = pd.DataFrame()
     for idx, img_dir in enumerate(img_dirs):
-        _study_list = map(lambda path: Path(path).parents[1].name, img_dir)
-        _series_list = map(lambda path: Path(path).parents[0].name, img_dir)
+        _study_list = map(lambda path: get_study_name(path), img_dir)
+        _series_list = map(lambda path: get_series_name(path), img_dir)
         _img_names = map(lambda path: os.path.basename(path), img_dir)
         _df = pd.DataFrame(img_dir, columns=['image_path'])
         _df['image_name'] = list(_img_names)
@@ -179,7 +184,7 @@ def main(
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Stack images')
     parser.add_argument('--input_dirs', nargs='+', required=True, type=str)
@@ -188,7 +193,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_type', default='video', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', default='dataset/stacked', type=str)
+    parser.add_argument('--save_dir', default='dataset/HSI_stack', type=str)
     args = parser.parse_args()
 
     main(

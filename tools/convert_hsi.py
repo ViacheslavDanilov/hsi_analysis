@@ -1,14 +1,31 @@
+import os
+import logging
 import argparse
 import multiprocessing
+from pathlib import Path
 from functools import partial
+from typing import List, Union, Tuple, Optional
 
+import cv2
 import ffmpeg
 import imutils
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
-from tools.utils import *
+from tools.utils import (
+    read_hsi,
+    get_file_list,
+    get_dir_list,
+    get_study_name,
+    get_series_name,
+    get_color_map,
+    extract_body_part,
+    extract_temperature,
+    extract_time_stamp,
+)
+
 
 os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
@@ -22,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 def process_hsi(
-        file_path: str,
+        hsi_path: str,
         save_dir: str,
         data_type: str = 'absorbance',
         color_map: str = None,
@@ -36,25 +53,25 @@ def process_hsi(
 
     # Read HSI file and extract additional information
     hsi = read_hsi(
-        path=file_path,
+        path=hsi_path,
         data_type=data_type,
     )
-    body_part = extract_body_part(file_path)
-    date, time = extract_time_stamp(filename=Path(file_path).name)
+    study_name = get_study_name(path=hsi_path)
+    series_name = get_series_name(path=hsi_path)
+    body_part = extract_body_part(path=hsi_path)
+    temperature_idx, temperature = extract_temperature(path=hsi_path)
+    date, time = extract_time_stamp(path=hsi_path)
 
     # Select output_dir based on output_type
-    _hsi_name = Path(file_path).stem.lower()
-    hsi_name = _hsi_name.replace('_speccube', '')
-    test_dir = Path(file_path).parents[2].name
     if output_type == 'image':
-        output_dir = os.path.join(save_dir, test_dir, hsi_name)
+        output_dir = os.path.join(save_dir, study_name, series_name)
     else:
-        output_dir = os.path.join(save_dir, test_dir)
+        output_dir = os.path.join(save_dir, study_name)
     os.makedirs(output_dir, exist_ok=True)
 
     # Create video writer
     if output_type == 'video':
-        video_path_temp = os.path.join(output_dir, f'{hsi_name}_temp.mp4')
+        video_path_temp = os.path.join(output_dir, f'{series_name}_temp.mp4')
         _img = imutils.resize(hsi[:, :, 0], height=output_size[0], inter=cv2.INTER_LINEAR)
         _img_size = _img.shape[:-1] if len(_img.shape) == 3 else _img.shape
         video_height, video_width = _img_size
@@ -75,9 +92,10 @@ def process_hsi(
 
         metadata.append(
             {
-                'Source dir': str(Path(file_path).parent),
-                'Test name': str(test_dir),
-                'HSI name': str(Path(file_path).name),
+                'Source dir': str(Path(hsi_path).parent),
+                'Study name': study_name,
+                'Series name': series_name,
+                'HSI name': str(Path(hsi_path).name),
                 'Date': date,
                 'Time': time,
                 'Body part': body_part,
@@ -88,7 +106,10 @@ def process_hsi(
                 'Max': np.max(img),
                 'Height': img.shape[0],
                 'Width': img.shape[1],
-                'Wavelength': idx+1,
+                'Temperature ID': temperature_idx,
+                'Temperature': temperature,
+                'Wavelength ID': idx + 1,
+                'Wavelength': 500 + 5 * idx,
             }
         )
 
@@ -122,13 +143,13 @@ def process_hsi(
 
     # Replace OpenCV videos with FFmpeg ones
     if output_type == 'video':
-        video_path = os.path.join(output_dir, f'{hsi_name}.mp4')
+        video_path = os.path.join(output_dir, f'{series_name}.mp4')
         stream = ffmpeg.input(video_path_temp)
         stream = ffmpeg.output(stream, video_path, vcodec='libx264', video_bitrate='10M')
         ffmpeg.run(stream, quiet=True, overwrite_output=True)
         os.remove(video_path_temp)
 
-    logger.info(f'HSI processed......: {Path(file_path).name}')
+    logger.info(f'HSI processed......: {hsi_path}')
 
     return metadata
 
@@ -176,7 +197,6 @@ def main(
 
     # Multiprocessing of HSI files
     os.makedirs(save_dir, exist_ok=True)
-    num_cores = multiprocessing.cpu_count()
     processing_func = partial(
         process_hsi,
         data_type=data_type,
@@ -187,12 +207,13 @@ def main(
         fps=fps,
         save_dir=save_dir,
     )
-    _metadata = process_map(
+    num_cores = multiprocessing.cpu_count()
+    res = process_map(
         processing_func,
         tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI'),
         max_workers=num_cores,
     )
-    metadata = sum(_metadata, [])
+    metadata = sum(res, [])
 
     # Save metadata as an XLSX file
     df = pd.DataFrame(metadata)
@@ -213,7 +234,7 @@ def main(
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Convert Hyperspectral Images')
-    parser.add_argument('--input_dir', default='dataset/source', type=str)
+    parser.add_argument('--input_dir', default='dataset/HSI', type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--data_type',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
@@ -222,7 +243,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', default='dataset/absorbance', type=str)
+    parser.add_argument('--save_dir', default='dataset/HSI_absorbance', type=str)
     args = parser.parse_args()
 
     main(

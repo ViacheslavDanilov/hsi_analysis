@@ -1,13 +1,19 @@
+import os
 import json
+import logging
 import argparse
-from typing import Dict
+from pathlib import Path
 from functools import partial
 from joblib import Parallel, delayed
+from typing import Dict, Tuple, List
 
+import cv2
+import pandas as pd
 from tqdm import tqdm
+import supervisely_lib as sly
 
 from tools.utils import crop_image, extract_body_part
-from tools.supervisely_utils import *
+from tools.supervisely_utils import read_sly_project
 
 
 os.makedirs('logs', exist_ok=True)
@@ -48,16 +54,17 @@ def get_object_map(
 def process_single_video(
         group: Tuple[int, pd.DataFrame],
         img_type: str,
+        box_extension: int,
         save_dir: str,
 ) -> pd.DataFrame:
     _, row = group
-    study = row['study']
-    series = row['series']
+    study_name = row['study']
+    series_name = row['series']
     video_path = row['video_path']
 
     # Create image and annotation directories
-    img_dir = os.path.join(save_dir, study, series, 'img')
-    ann_dir = os.path.join(save_dir, study, series, 'ann')
+    img_dir = os.path.join(save_dir, study_name, series_name, 'img')
+    ann_dir = os.path.join(save_dir, study_name, series_name, 'ann')
     os.makedirs(img_dir, exist_ok=True)
     os.makedirs(ann_dir, exist_ok=True)
 
@@ -107,8 +114,8 @@ def process_single_video(
 
         # Add information to the data frame
         body_part = extract_body_part(img_path_rel)
-        df_study.at[idx, 'Study'] = study
-        df_study.at[idx, 'Series'] = series
+        df_study.at[idx, 'Study'] = study_name
+        df_study.at[idx, 'Series'] = series_name
         df_study.at[idx, 'Body part'] = body_part
         df_study.at[idx, 'Image path'] = img_path_rel
         df_study.at[idx, 'Ann path'] = ann_path_rel
@@ -124,7 +131,7 @@ def process_single_video(
     f = open(ann_path)
     ann_data = json.load(f)
     img_height = ann_data['size']['height']
-    img_width = ann_data['size']['width'] // 2          # delimiter is a number of images in a stacked row
+    img_width = ann_data['size']['width'] // 3          # delimiter is a number of images in a stacked row
 
     # Extract object keys
     object_map = get_object_map(objects=ann_data['objects'])
@@ -135,6 +142,12 @@ def process_single_video(
         ann_path = os.path.join(ann_dir, f'{frame_idx + 1:03d}.txt')
         f = open(file=ann_path, mode='w')
         for _figure in frame['figures']:
+
+            _figure['geometry']['points']['exterior'][0][0] -= box_extension    # x1 or left
+            _figure['geometry']['points']['exterior'][0][1] -= box_extension    # y1 or top
+            _figure['geometry']['points']['exterior'][1][0] += box_extension    # x2 or right
+            _figure['geometry']['points']['exterior'][1][1] += box_extension    # y2 or bottom
+
             figure = sly.Rectangle.from_json(_figure['geometry'])
             object_key = _figure['objectKey']
             class_label = object_map[object_key]
@@ -192,6 +205,7 @@ def main(
     processing_func = partial(
         process_single_video,
         img_type=img_type,
+        box_extension=box_extension,
         save_dir=save_dir,
     )
     result = Parallel(n_jobs=-1)(
@@ -213,8 +227,8 @@ if __name__ == '__main__':
     parser.add_argument('--project_dir', required=True, type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--box_extension', default=10, type=int)                # TODO: implement box extension
-    parser.add_argument('--img_type',  default='absorbance', type=str, choices=['absorbance', 'hsv'])
+    parser.add_argument('--box_extension', default=0, type=int)
+    parser.add_argument('--img_type',  default='absorbance', type=str, choices=['absorbance', 'hsv', 'reflectance'])
     parser.add_argument('--save_dir', required=True, type=str)
     args = parser.parse_args()
 
