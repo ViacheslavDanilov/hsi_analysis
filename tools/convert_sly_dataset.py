@@ -1,13 +1,19 @@
+import os
 import json
+import logging
 import argparse
-from typing import Dict
+from pathlib import Path
 from functools import partial
 from joblib import Parallel, delayed
+from typing import Dict, Tuple, List
 
+import cv2
+import pandas as pd
 from tqdm import tqdm
+import supervisely_lib as sly
 
 from tools.utils import crop_image, extract_body_part
-from tools.supervisely_utils import *
+from tools.supervisely_utils import read_sly_project
 
 
 os.makedirs('logs', exist_ok=True)
