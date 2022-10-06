@@ -174,7 +174,11 @@ def extract_body_part(
 def extract_temperature(
         path: str,
 ) -> Tuple[int, str]:
-    series_name = get_series_name(path)
+
+    if os.path.isfile(path):
+        series_name = get_series_name(path)
+    else:
+        series_name = path
 
     _temperature_idx = re.findall(r'\d+', series_name)
     temperature_idx = int(_temperature_idx[3])
