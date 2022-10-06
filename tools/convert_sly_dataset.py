@@ -148,7 +148,9 @@ def process_single_video(
     # Save annotations
     for frame in ann_data['frames']:
         frame_idx = frame['index']
-        ann_path = os.path.join(ann_dir, f'{frame_idx + 1:03d}.txt')
+        wavelength = 500 + 5*frame_idx
+        stem = f'{frame_idx + 1:03d}_W={wavelength:d}_T{temperature_idx:d}={temperature:s}'
+        ann_path = os.path.join(ann_dir, f'{stem}.txt')
         f = open(file=ann_path, mode='w')
         for _figure in frame['figures']:
 
