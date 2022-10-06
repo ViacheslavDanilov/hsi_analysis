@@ -26,7 +26,6 @@ from tools.utils import (
     extract_time_stamp,
 )
 
-
 os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
