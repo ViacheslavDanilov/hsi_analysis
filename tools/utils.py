@@ -12,14 +12,14 @@ from struct import unpack
 
 def read_hsi(
         path: str,
-        data_type: str = 'absorbance',
+        modality: str = 'absorbance',
 ) -> np.ndarray:
     """
     Read HSI images (.dat files) as a numpy array (H, W, WL)
 
     Args:
         path: a path to a .dat file being read
-        data_type: a mode of reading HSI images
+        modality: a mode of reading HSI images
     Returns:
         data: HSI represented in a 3D NumPy array
     """
@@ -41,12 +41,12 @@ def read_hsi(
         data = np.transpose(data, (1, 0, 2))
         data = data[::-1, ::1, :]
 
-        if data_type == 'reflectance':
+        if modality == 'reflectance':
             pass
-        elif data_type == 'absorbance':
+        elif modality == 'absorbance':
             data = -np.log10(np.maximum(data, 0.01))
         else:
-            raise ValueError(f'Invalid data type: {data_type}')
+            raise ValueError(f'Invalid data type: {modality}')
 
         data = data.astype(np.float32)
 

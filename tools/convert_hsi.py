@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 def process_hsi(
         hsi_path: str,
         save_dir: str,
-        data_type: str = 'absorbance',
+        modality: str = 'absorbance',
         color_map: str = None,
         apply_equalization: bool = False,
         output_type: str = 'image',
@@ -53,7 +53,7 @@ def process_hsi(
     # Read HSI file and extract additional information
     hsi = read_hsi(
         path=hsi_path,
-        data_type=data_type,
+        modality=modality,
     )
     study_name = get_study_name(path=hsi_path)
     series_name = get_series_name(path=hsi_path)
@@ -156,7 +156,7 @@ def process_hsi(
 def main(
         input_dir: str,
         save_dir: str,
-        data_type: str = 'absorbance',
+        modality: str = 'absorbance',
         color_map: str = None,
         apply_equalization: bool = False,
         output_type: str = 'image',
@@ -171,7 +171,7 @@ def main(
     logger.info(f'Included dirs......: {include_dirs}')
     logger.info(f'Excluded dirs......: {exclude_dirs}')
     logger.info(f'Output dir.........: {save_dir}')
-    logger.info(f'Data type..........: {data_type}')
+    logger.info(f'Modality...........: {modality}')
     logger.info(f'Color map..........: {color_map}')
     logger.info(f'Apply equalization.: {apply_equalization}')
     logger.info(f'Output type........: {output_type}')
@@ -198,7 +198,7 @@ def main(
     os.makedirs(save_dir, exist_ok=True)
     processing_func = partial(
         process_hsi,
-        data_type=data_type,
+        modality=modality,
         color_map=color_map,
         apply_equalization=apply_equalization,
         output_type=output_type,
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument('--input_dir', default='dataset/HSI', type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--data_type',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
+    parser.add_argument('--modality',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
     parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
     parser.add_argument('--apply_equalization', action='store_true')
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
@@ -249,7 +249,7 @@ if __name__ == '__main__':
         input_dir=args.input_dir,
         include_dirs=args.include_dirs,
         exclude_dirs=args.exclude_dirs,
-        data_type=args.data_type,
+        modality=args.modality,
         color_map=args.color_map,
         apply_equalization=args.apply_equalization,
         output_type=args.output_type,
