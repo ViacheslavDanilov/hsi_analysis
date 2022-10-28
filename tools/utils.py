@@ -53,6 +53,53 @@ def read_hsi(
         return data
 
 
+def resize_volume(
+        input_image: np.ndarray,
+        output_size: Tuple[int, int, int],
+        interpolation: int = cv2.INTER_LINEAR,
+) -> np.ndarray:
+
+    output_height, output_width, output_depth = output_size
+    source_height, source_width, source_depth = input_image.shape
+
+    intermediate_image = np.zeros(
+        shape=(output_height, output_width, source_depth),
+        dtype=input_image.dtype,
+    )
+    output_image = np.zeros(
+        shape=(output_height, output_width, output_depth),
+        dtype=input_image.dtype,
+    )
+
+    # Resize along height and width dimensions
+    if (output_height, output_width) != (source_height, source_width):
+        for i in range(source_depth):
+            img = input_image[:, :, i]
+            img_out = cv2.resize(
+                src=img,
+                dsize=(output_width, output_height),
+                interpolation=interpolation,
+            )
+            intermediate_image[:, :, i] = img_out
+    else:
+        intermediate_image = input_image.copy()
+
+    # Resize along width and depth dimensions
+    if (output_width, output_depth) != (source_width, source_depth):
+        for j in range(intermediate_image.shape[0]):
+            img = intermediate_image[j, :, :]
+            img_out = cv2.resize(
+                src=img,
+                dsize=(output_depth, output_width),
+                interpolation=interpolation,
+            )
+            output_image[j, :, :] = img_out
+    else:
+        output_image = intermediate_image.copy()
+
+    return output_image
+
+
 def get_file_list(
         src_dirs: Union[List[str], str],
         ext_list: Union[List[str], str],
