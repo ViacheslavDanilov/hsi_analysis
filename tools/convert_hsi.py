@@ -157,14 +157,14 @@ def main(
         input_dir: str,
         save_dir: str,
         modality: str = 'absorbance',
-        color_map: str = None,
+        color_map: Optional[str] = None,
         apply_equalization: bool = False,
         output_type: str = 'image',
         output_size: Tuple[int, int] = (744, 1000),
         fps: int = 15,
         include_dirs: Optional[Union[List[str], str]] = None,
         exclude_dirs: Optional[Union[List[str], str]] = None,
-):
+) -> None:
 
     # Log main parameters
     logger.info(f'Input dir..........: {input_dir}')
