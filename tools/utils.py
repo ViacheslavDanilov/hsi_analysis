@@ -12,14 +12,14 @@ from struct import unpack
 
 def read_hsi(
         path: str,
-        data_type: str = 'absorbance',
+        modality: str = 'absorbance',
 ) -> np.ndarray:
     """
     Read HSI images (.dat files) as a numpy array (H, W, WL)
 
     Args:
         path: a path to a .dat file being read
-        data_type: a mode of reading HSI images
+        modality: a mode of reading HSI images
     Returns:
         data: HSI represented in a 3D NumPy array
     """
@@ -41,16 +41,63 @@ def read_hsi(
         data = np.transpose(data, (1, 0, 2))
         data = data[::-1, ::1, :]
 
-        if data_type == 'reflectance':
+        if modality == 'reflectance':
             pass
-        elif data_type == 'absorbance':
+        elif modality == 'absorbance':
             data = -np.log10(np.maximum(data, 0.01))
         else:
-            raise ValueError(f'Invalid data type: {data_type}')
+            raise ValueError(f'Invalid data type: {modality}')
 
         data = data.astype(np.float32)
 
         return data
+
+
+def resize_volume(
+        input_image: np.ndarray,
+        output_size: Tuple[int, int, int],
+        interpolation: int = cv2.INTER_LINEAR,
+) -> np.ndarray:
+
+    output_height, output_width, output_depth = output_size
+    source_height, source_width, source_depth = input_image.shape
+
+    intermediate_image = np.zeros(
+        shape=(output_height, output_width, source_depth),
+        dtype=input_image.dtype,
+    )
+    output_image = np.zeros(
+        shape=(output_height, output_width, output_depth),
+        dtype=input_image.dtype,
+    )
+
+    # Resize along height and width dimensions
+    if (output_height, output_width) != (source_height, source_width):
+        for i in range(source_depth):
+            img = input_image[:, :, i]
+            img_out = cv2.resize(
+                src=img,
+                dsize=(output_width, output_height),
+                interpolation=interpolation,
+            )
+            intermediate_image[:, :, i] = img_out
+    else:
+        intermediate_image = input_image.copy()
+
+    # Resize along width and depth dimensions
+    if (output_width, output_depth) != (source_width, source_depth):
+        for j in range(intermediate_image.shape[0]):
+            img = intermediate_image[j, :, :]
+            img_out = cv2.resize(
+                src=img,
+                dsize=(output_depth, output_width),
+                interpolation=interpolation,
+            )
+            output_image[j, :, :] = img_out
+    else:
+        output_image = intermediate_image.copy()
+
+    return output_image
 
 
 def get_file_list(
@@ -174,7 +221,11 @@ def extract_body_part(
 def extract_temperature(
         path: str,
 ) -> Tuple[int, str]:
-    series_name = get_series_name(path)
+
+    if os.path.isfile(path):
+        series_name = get_series_name(path)
+    else:
+        series_name = path
 
     _temperature_idx = re.findall(r'\d+', series_name)
     temperature_idx = int(_temperature_idx[3])

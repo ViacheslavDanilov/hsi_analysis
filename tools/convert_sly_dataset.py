@@ -12,8 +12,8 @@ import pandas as pd
 from tqdm import tqdm
 import supervisely_lib as sly
 
-from tools.utils import crop_image, extract_body_part
 from tools.supervisely_utils import read_sly_project
+from tools.utils import crop_image, extract_body_part, extract_temperature
 
 
 os.makedirs('logs', exist_ok=True)
@@ -76,8 +76,10 @@ def process_single_video(
             'Body part',
             'Image path',
             'Ann path',
-            'Wavelength',
+            'Temperature ID',
+            'Temperature',
             'Wavelength ID',
+            'Wavelength',
             'Class label',
             'Class ID',
             'x1',
@@ -94,6 +96,8 @@ def process_single_video(
         ]
     )
     video = cv2.VideoCapture(video_path)
+    temperature_idx, temperature = extract_temperature(path=series_name)
+
     idx = 0
     while True:
         success, _img = video.read()
@@ -103,11 +107,14 @@ def process_single_video(
             input_img=_img,
             img_type=img_type
         )
-        img_path = os.path.join(img_dir, f'{idx+1:03d}.png')
+        wavelength_idx = idx + 1
+        wavelength = 500 + 5*idx
+        stem = f'{idx+1:03d}_W={wavelength:d}_T{temperature_idx:d}={temperature:s}'
+        img_path = os.path.join(img_dir, f'{stem}.png')
         img_path_rel = os.path.relpath(img_path, start=save_dir)
         cv2.imwrite(img_path, img)
 
-        ann_path = os.path.join(ann_dir, f'{idx+1:03d}.txt')
+        ann_path = os.path.join(ann_dir, f'{stem}.txt')
         ann_path_rel = os.path.relpath(img_path, start=save_dir)
         f = open(file=ann_path, mode='w')
         f.close()
@@ -119,8 +126,10 @@ def process_single_video(
         df_study.at[idx, 'Body part'] = body_part
         df_study.at[idx, 'Image path'] = img_path_rel
         df_study.at[idx, 'Ann path'] = ann_path_rel
-        df_study.at[idx, 'Wavelength'] = 500 + 5*idx
-        df_study.at[idx, 'Wavelength ID'] = idx+1
+        df_study.at[idx, 'Temperature ID'] = temperature_idx
+        df_study.at[idx, 'Temperature'] = temperature
+        df_study.at[idx, 'Wavelength ID'] = wavelength_idx
+        df_study.at[idx, 'Wavelength'] = wavelength
         df_study.at[idx, 'Image width'] = img.shape[1]
         df_study.at[idx, 'Image height'] = img.shape[0]
 
@@ -139,7 +148,9 @@ def process_single_video(
     # Save annotations
     for frame in ann_data['frames']:
         frame_idx = frame['index']
-        ann_path = os.path.join(ann_dir, f'{frame_idx + 1:03d}.txt')
+        wavelength = 500 + 5*frame_idx
+        stem = f'{frame_idx + 1:03d}_W={wavelength:d}_T{temperature_idx:d}={temperature:s}'
+        ann_path = os.path.join(ann_dir, f'{stem}.txt')
         f = open(file=ann_path, mode='w')
         for _figure in frame['figures']:
 

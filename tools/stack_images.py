@@ -80,14 +80,14 @@ def process_group(
             (video_width, video_height),
         )
 
-    img_groups = df.groupby('image_name')
+    img_groups = df.groupby('img_name')
 
     for idx, (img_name, df_img) in enumerate(img_groups):
 
         assert idx + 1 == int(Path(img_name).stem), 'Wavelength and image name mismatch'
 
         # Stack images
-        img_paths = df_img['image_path'].tolist()
+        img_paths = df_img['img_path'].tolist()
         img = stack_images(img_paths, output_size)
 
         # Save image
@@ -160,8 +160,8 @@ def main(
         _study_list = map(lambda path: get_study_name(path), img_dir)
         _series_list = map(lambda path: get_series_name(path), img_dir)
         _img_names = map(lambda path: os.path.basename(path), img_dir)
-        _df = pd.DataFrame(img_dir, columns=['image_path'])
-        _df['image_name'] = list(_img_names)
+        _df = pd.DataFrame(img_dir, columns=['img_path'])
+        _df['img_name'] = list(_img_names)
         _df['study'] = list(_study_list)
         _df['series'] = list(_series_list)
         _df['dir_id'] = idx + 1
