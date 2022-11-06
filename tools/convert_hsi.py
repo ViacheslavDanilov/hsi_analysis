@@ -95,11 +95,11 @@ def process_hsi(
                 'Study name': study_name,
                 'Series name': series_name,
                 'HSI name': str(Path(hsi_path).name),
+                'Image name': img_name,
+                'Image path': img_path,
                 'Date': date,
                 'Time': time,
                 'Body part': body_part,
-                'Image path': img_path,
-                'Image name': img_name,
                 'Min': np.min(img),
                 'Mean': np.mean(img),
                 'Max': np.max(img),
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', default='dataset/HSI_absorbance', type=str)
+    parser.add_argument('--save_dir', default='dataset/Raw/HSI_abs', type=str)
     args = parser.parse_args()
 
     main(
