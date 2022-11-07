@@ -11,6 +11,7 @@ import imutils
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler, PowerTransformer
 
@@ -40,7 +41,8 @@ logger = logging.getLogger(__name__)
 def process_hsi(
         hsi_path: str,
         save_dir: str,
-        num_components: int = 10,
+        num_components: int = 3,
+        reduction_method: str = 'PCA',
         scaling_method: str = 'Standard',
         modality: str = 'absorbance',
         color_map: Optional[str] = None,
@@ -76,14 +78,26 @@ def process_hsi(
     else:
         raise ValueError('Unsupported scaling')
 
-    columns = [f'PC{idx + 1}' for idx in range(num_components)]
-    pca = PCA(
-        n_components=num_components,
-        svd_solver='full',        # full arpack randomized
-        random_state=11,
-    )
-    components = pca.fit_transform(X)
-    var_ratio = list(pca.explained_variance_ratio_)
+    # Apply PCA or TSNE transformation
+    if reduction_method == 'TSNE':
+        tsne = TSNE(
+            n_components=num_components,
+            perplexity=30,
+            n_iter=300,
+            verbose=1,
+        )
+        X_reduced = tsne.fit_transform(X)
+        var_ratio = [np.nan for x in range(10)]
+    elif reduction_method == 'PCA':
+        pca = PCA(
+            n_components=num_components,
+            svd_solver='full',
+            random_state=11,
+        )
+        X_reduced = pca.fit_transform(X)
+        var_ratio = list(pca.explained_variance_ratio_)
+    else:
+        raise ValueError(f'Unknown reduction method: {reduction_method}')
 
     # Process HSI in an image-by-image fashion
     save_dir = os.path.join(save_dir, study_name, series_name)
@@ -91,7 +105,7 @@ def process_hsi(
     metadata = []
     for idx in range(num_components):
 
-        img = components[:, idx]
+        img = X_reduced[:, idx]
         img = img.reshape(hsi_height, hsi_width)
         img_name = f'{idx+1:03d}.png'
         img_path = os.path.join(save_dir, img_name)
@@ -114,6 +128,7 @@ def process_hsi(
                 'Width': img.shape[1],
                 'Temperature ID': temperature_idx,
                 'Temperature': temperature,
+                'Method': reduction_method,
                 'PC': idx + 1,
                 'Variance': var_ratio[idx],
             }
@@ -145,7 +160,8 @@ def process_hsi(
 def main(
         input_dir: str,
         save_dir: str,
-        num_components: int = 10,
+        num_components: int = 3,
+        reduction_method: str = 'PCA',
         scaling_method: str = 'Standard',
         modality: str = 'absorbance',
         color_map: Optional[str] = None,
@@ -160,7 +176,8 @@ def main(
     logger.info(f'Included dirs......: {include_dirs}')
     logger.info(f'Excluded dirs......: {exclude_dirs}')
     logger.info(f'Components.........: {num_components}')
-    logger.info(f'Scaling............: {scaling_method}')
+    logger.info(f'Reduction method...: {reduction_method}')
+    logger.info(f'Scaling method.....: {scaling_method}')
     logger.info(f'Modality...........: {modality}')
     logger.info(f'Color map..........: {color_map}')
     logger.info(f'Apply equalization.: {apply_equalization}')
@@ -188,6 +205,7 @@ def main(
     processing_func = partial(
         process_hsi,
         num_components=num_components,
+        reduction_method=reduction_method,
         scaling_method=scaling_method,
         modality=modality,
         color_map=color_map,
@@ -222,7 +240,8 @@ if __name__ == '__main__':
     parser.add_argument('--input_dir', default='dataset/HSI', type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--num_components', default=10, type=int)
+    parser.add_argument('--num_components', default=3, type=int)
+    parser.add_argument('--reduction_method', default='PCA', type=str, choices=['PCA', 'TSNE'])
     parser.add_argument('--scaling_method', default='Standard', type=str, choices=['Raw', 'MinMax', 'Standard', 'Robust', 'Power'])
     parser.add_argument('--modality',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
     parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
@@ -235,6 +254,7 @@ if __name__ == '__main__':
         input_dir=args.input_dir,
         include_dirs=args.include_dirs,
         exclude_dirs=args.exclude_dirs,
+        reduction_method=args.reduction_method,
         scaling_method=args.scaling_method,
         modality=args.modality,
         num_components=args.num_components,
