@@ -226,7 +226,7 @@ def main(
     df.index += 1
     df.to_excel(
         save_path,
-        sheet_name='PCA',
+        sheet_name='Metadata',
         index=True,
         index_label='ID',
     )
@@ -236,7 +236,7 @@ def main(
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Apply PCA to HSI cubes')
+    parser = argparse.ArgumentParser(description='Reduce dimensionality of HSI cubes')
     parser.add_argument('--input_dir', default='dataset/HSI', type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
