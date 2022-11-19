@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_class_id(
-        class_label: str,
+    class_label: str,
 ) -> int:
 
     if class_label == 'Zone':
@@ -41,7 +41,7 @@ def get_class_id(
 
 
 def get_object_map(
-        objects: List[Dict],
+    objects: List[Dict],
 ) -> dict:
 
     object_map = {}
@@ -52,10 +52,10 @@ def get_object_map(
 
 
 def process_single_video(
-        group: Tuple[int, pd.DataFrame],
-        img_type: str,
-        box_extension: int,
-        save_dir: str,
+    group: Tuple[int, pd.DataFrame],
+    img_type: str,
+    box_extension: int,
+    save_dir: str,
 ) -> pd.DataFrame:
     _, row = group
     study_name = row['study']
@@ -201,10 +201,10 @@ def process_single_video(
 
 
 def main(
-        df: pd.DataFrame,
-        box_extension: int,
-        img_type: str,
-        save_dir: str,
+    df: pd.DataFrame,
+    box_extension: int,
+    img_type: str,
+    save_dir: str,
 ) -> None:
 
     logger.info(f'Output directory.....: {save_dir}')
@@ -222,14 +222,20 @@ def main(
     result = Parallel(n_jobs=-1)(
         delayed(processing_func)(row) for row in tqdm(df.iterrows(), desc='Dataset conversion', unit=' video')
     )
+
+    save_path = os.path.join(save_dir, f'metadata.xlsx')
     df_out = pd.concat(result)
     df_out.reset_index(drop=True, inplace=True)
     df_out.sort_values(['Study', 'Series'], inplace=True)
-    save_path = os.path.join(save_dir, f'metadata.csv')
-    df_out.to_csv(
+    df_out.index += 1
+    df_out.to_excel(
         save_path,
-        index=False,
+        sheet_name='Metadata',
+        index=True,
+        index_label='ID',
     )
+    logger.info('')
+    logger.info('Dataset conversion complete')
 
 
 if __name__ == '__main__':
@@ -243,6 +249,8 @@ if __name__ == '__main__':
     parser.add_argument('--save_dir', required=True, type=str)
     args = parser.parse_args()
 
+    args.save_dir = os.path.join(args.save_dir, args.img_type)
+
     df = read_sly_project(
         project_dir=args.project_dir,
         include_dirs=args.include_dirs,
@@ -255,6 +263,3 @@ if __name__ == '__main__':
         img_type=args.img_type,
         save_dir=args.save_dir,
     )
-
-    logger.info('')
-    logger.info('Dataset conversion complete')
