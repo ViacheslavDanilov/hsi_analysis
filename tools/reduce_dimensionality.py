@@ -231,7 +231,7 @@ def main(
         output_size=output_size,
         save_dir=save_dir,
     )
-    result = Parallel(n_jobs=-1)(
+    result = Parallel(n_jobs=-1, prefer='threads')(
         delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Reduce hyperspectral images', unit='HSI')
     )
     metadata = sum(result, [])
