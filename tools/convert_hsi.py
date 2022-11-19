@@ -1,9 +1,9 @@
 import os
 import logging
 import argparse
-import multiprocessing
 from pathlib import Path
 from functools import partial
+from joblib import Parallel, delayed
 from typing import List, Union, Tuple, Optional
 
 import cv2
@@ -12,7 +12,6 @@ import imutils
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from tqdm.contrib.concurrent import process_map
 
 from tools.utils import (
     read_hsi,
@@ -206,13 +205,10 @@ def main(
         fps=fps,
         save_dir=save_dir,
     )
-    num_cores = multiprocessing.cpu_count()
-    res = process_map(
-        processing_func,
-        tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI'),
-        max_workers=num_cores,
+    result = Parallel(n_jobs=-1, prefer='threads')(
+        delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI')
     )
-    metadata = sum(res, [])
+    metadata = sum(result, [])
 
     # Save metadata as an XLSX file
     df = pd.DataFrame(metadata)
@@ -242,8 +238,13 @@ if __name__ == '__main__':
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', default='dataset/Raw/HSI_abs', type=str)
+    parser.add_argument('--save_dir', default='dataset/HSI_processed', type=str)
     args = parser.parse_args()
+
+    if args.color_map is not None:
+        args.save_dir = os.path.join(args.save_dir, args.color_map)
+    else:
+        args.save_dir = os.path.join(args.save_dir, args.modality)
 
     main(
         input_dir=args.input_dir,
