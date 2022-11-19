@@ -266,7 +266,11 @@ if __name__ == '__main__':
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--save_dir', default='dataset', type=str)
     args = parser.parse_args()
-    args.save_dir = os.path.join(args.save_dir, args.reduction_method, args.modality)
+
+    if args.color_map is not None:
+        args.save_dir = os.path.join(args.save_dir, args.reduction_method, args.color_map)
+    else:
+        args.save_dir = os.path.join(args.save_dir, args.reduction_method, args.modality)
 
     main(
         input_dir=args.input_dir,
