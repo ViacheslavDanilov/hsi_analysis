@@ -98,7 +98,7 @@ def process_hsi(
     hsi_norm = StandardScaler().fit_transform(hsi_reshaped)
 
     # Apply PCA or TSNE transformation
-    pickle_dir = os.path.join(Path(save_dir).parent, 'pkl', study_name)
+    pickle_dir = os.path.join(Path(save_dir).parent, f'{modality}_pkl', study_name)
     pickle_name = f'{series_name}.pkl'
     pickle_path = os.path.join(pickle_dir, pickle_name)
     os.makedirs(pickle_dir, exist_ok=True)
