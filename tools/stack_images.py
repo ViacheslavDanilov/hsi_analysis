@@ -1,9 +1,9 @@
 import os
 import logging
 import argparse
-import multiprocessing
 from pathlib import Path
 from functools import partial
+from joblib import Parallel, delayed
 from typing import List, Tuple, Union, Optional
 
 import cv2
@@ -12,7 +12,6 @@ import imutils
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from tqdm.contrib.concurrent import process_map
 
 from tools.utils import (
     get_file_list,
@@ -169,7 +168,6 @@ def main(
 
     # Group images and process them
     gb = df.groupby(['study', 'series'])
-    num_cores = multiprocessing.cpu_count()
     processing_func = partial(
         process_group,
         output_type=output_type,
@@ -177,10 +175,8 @@ def main(
         fps=fps,
         save_dir=save_dir,
     )
-    process_map(
-        processing_func,
-        tqdm(gb, desc='Stacking images', unit=' groups'),
-        max_workers=num_cores,
+    Parallel(n_jobs=-1, prefer='threads')(
+        delayed(processing_func)(group) for group in tqdm(gb, desc='Stacking images', unit=' groups')
     )
 
 
@@ -190,10 +186,10 @@ if __name__ == '__main__':
     parser.add_argument('--input_dirs', nargs='+', required=True, type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--output_type', default='video', type=str, choices=['image', 'video'])
+    parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', default='dataset/HSI_stack', type=str)
+    parser.add_argument('--save_dir', default='dataset/HSI_processed/stack', type=str)
     args = parser.parse_args()
 
     main(
