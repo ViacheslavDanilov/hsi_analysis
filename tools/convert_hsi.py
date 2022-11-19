@@ -1,9 +1,9 @@
 import os
 import logging
 import argparse
-import multiprocessing
 from pathlib import Path
 from functools import partial
+from joblib import Parallel, delayed
 from typing import List, Union, Tuple, Optional
 
 import cv2
@@ -12,7 +12,6 @@ import imutils
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from tqdm.contrib.concurrent import process_map
 
 from tools.utils import (
     read_hsi,
@@ -95,11 +94,11 @@ def process_hsi(
                 'Study name': study_name,
                 'Series name': series_name,
                 'HSI name': str(Path(hsi_path).name),
+                'Image name': img_name,
+                'Image path': img_path,
                 'Date': date,
                 'Time': time,
                 'Body part': body_part,
-                'Image path': img_path,
-                'Image name': img_name,
                 'Min': np.min(img),
                 'Mean': np.mean(img),
                 'Max': np.max(img),
@@ -157,14 +156,14 @@ def main(
         input_dir: str,
         save_dir: str,
         modality: str = 'absorbance',
-        color_map: str = None,
+        color_map: Optional[str] = None,
         apply_equalization: bool = False,
         output_type: str = 'image',
         output_size: Tuple[int, int] = (744, 1000),
         fps: int = 15,
         include_dirs: Optional[Union[List[str], str]] = None,
         exclude_dirs: Optional[Union[List[str], str]] = None,
-):
+) -> None:
 
     # Log main parameters
     logger.info(f'Input dir..........: {input_dir}')
@@ -206,13 +205,10 @@ def main(
         fps=fps,
         save_dir=save_dir,
     )
-    num_cores = multiprocessing.cpu_count()
-    res = process_map(
-        processing_func,
-        tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI'),
-        max_workers=num_cores,
+    result = Parallel(n_jobs=-1, prefer='threads')(
+        delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI')
     )
-    metadata = sum(res, [])
+    metadata = sum(result, [])
 
     # Save metadata as an XLSX file
     df = pd.DataFrame(metadata)
@@ -242,8 +238,13 @@ if __name__ == '__main__':
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
     parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', default='dataset/HSI_absorbance', type=str)
+    parser.add_argument('--save_dir', default='dataset/HSI_processed', type=str)
     args = parser.parse_args()
+
+    if args.color_map is not None:
+        args.save_dir = os.path.join(args.save_dir, args.color_map)
+    else:
+        args.save_dir = os.path.join(args.save_dir, args.modality)
 
     main(
         input_dir=args.input_dir,
