@@ -16,8 +16,8 @@ from tqdm import tqdm
 from tools.utils import (
     get_file_list,
     get_dir_list,
-    get_study_name,
-    get_series_name,
+    extract_study_name,
+    extract_series_name,
 )
 
 os.makedirs('logs', exist_ok=True)
@@ -156,8 +156,8 @@ def main(
     # Create a dataframe with all images
     df = pd.DataFrame()
     for idx, img_dir in enumerate(img_dirs):
-        _study_list = map(lambda path: get_study_name(path), img_dir)
-        _series_list = map(lambda path: get_series_name(path), img_dir)
+        _study_list = map(lambda path: extract_study_name(path), img_dir)
+        _series_list = map(lambda path: extract_series_name(path), img_dir)
         _img_names = map(lambda path: os.path.basename(path), img_dir)
         _df = pd.DataFrame(img_dir, columns=['img_path'])
         _df['img_name'] = list(_img_names)

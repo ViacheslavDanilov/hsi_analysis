@@ -17,8 +17,8 @@ from tools.utils import (
     read_hsi,
     get_file_list,
     get_dir_list,
-    get_study_name,
-    get_series_name,
+    extract_study_name,
+    extract_series_name,
     get_color_map,
     extract_body_part,
     extract_temperature,
@@ -54,8 +54,8 @@ def process_hsi(
         path=hsi_path,
         modality=modality,
     )
-    study_name = get_study_name(path=hsi_path)
-    series_name = get_series_name(path=hsi_path)
+    study_name = extract_study_name(path=hsi_path)
+    series_name = extract_series_name(path=hsi_path)
     body_part = extract_body_part(path=hsi_path)
     temperature_idx, temperature = extract_temperature(path=hsi_path)
     date, time = extract_time_stamp(path=hsi_path)

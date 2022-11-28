@@ -11,8 +11,8 @@ from struct import unpack
 
 
 def read_hsi(
-        path: str,
-        modality: str = 'absorbance',
+    path: str,
+    modality: str = 'absorbance',
 ) -> np.ndarray:
     """
     Read HSI images (.dat files) as a numpy array (H, W, WL)
@@ -54,9 +54,9 @@ def read_hsi(
 
 
 def resize_volume(
-        input_image: np.ndarray,
-        output_size: Tuple[int, int, int],
-        interpolation: int = cv2.INTER_LINEAR,
+    input_image: np.ndarray,
+    output_size: Tuple[int, int, int],
+    interpolation: int = cv2.INTER_LINEAR,
 ) -> np.ndarray:
 
     output_height, output_width, output_depth = output_size
@@ -101,9 +101,9 @@ def resize_volume(
 
 
 def get_file_list(
-        src_dirs: Union[List[str], str],
-        ext_list: Union[List[str], str],
-        include_template: str = '',
+    src_dirs: Union[List[str], str],
+    ext_list: Union[List[str], str],
+    include_template: str = '',
 ) -> List[str]:
     """
     Get list of files with the specified extensions
@@ -136,9 +136,9 @@ def get_file_list(
 
 
 def get_dir_list(
-        data_dir: str,
-        include_dirs: Optional[Union[List[str], str]] = None,
-        exclude_dirs: Optional[Union[List[str], str]] = None,
+    data_dir: str,
+    include_dirs: Optional[Union[List[str], str]] = None,
+    exclude_dirs: Optional[Union[List[str], str]] = None,
 ) -> List[str]:
     """
     Filter the list of studied directories
@@ -178,22 +178,22 @@ def get_dir_list(
     return dir_list
 
 
-def get_study_name(
-        path: str,
+def extract_study_name(
+    path: str,
 ) -> str:
     study_name = Path(path).parts[-3]
     return study_name
 
 
-def get_series_name(
-        path: str,
+def extract_series_name(
+    path: str,
 ) -> str:
     series_name = Path(path).parts[-2]
     return series_name
 
 
 def extract_body_part(
-        path: str,
+    path: str,
 ) -> str:
     """
     Extract a body part name based on the HSI path
@@ -219,11 +219,11 @@ def extract_body_part(
 
 
 def extract_temperature(
-        path: str,
+    path: str,
 ) -> Tuple[int, str]:
 
     if os.path.isfile(path):
-        series_name = get_series_name(path)
+        series_name = extract_series_name(path)
     else:
         series_name = path
 
@@ -237,7 +237,7 @@ def extract_temperature(
 
 
 def extract_time_stamp(
-        path: str,
+    path: str,
 ) -> Tuple[str, str]:
     """
     Extract a time stamp from the HSI path
@@ -249,8 +249,8 @@ def extract_time_stamp(
         time: a time string in format HH:MM:SS
     """
 
-    study_name = get_study_name(path)
-    series_name = get_series_name(path)
+    study_name = extract_study_name(path)
+    series_name = extract_series_name(path)
 
     try:
         date_list = re.findall(r'\d+', study_name)
@@ -265,7 +265,7 @@ def extract_time_stamp(
 
 
 def get_color_map(
-        color_map: str,
+    color_map: str,
 ):
     if color_map == 'jet':
         cmap = cv2.COLORMAP_JET
@@ -283,8 +283,8 @@ def get_color_map(
 
 
 def crop_image(
-        input_img: np.ndarray,
-        img_type: str = 'absorbance',
+    input_img: np.ndarray,
+    img_type: str = 'absorbance',
 ) -> np.ndarray:
     assert input_img.shape[1] % 3 == 0, 'Input image width should be divisible by 3 (contain 3 sub-images)'
 

@@ -23,8 +23,8 @@ def process_hsi(
 ) -> dict:
 
     hsi = read_hsi(hsi_path)
-    study_name = get_study_name(path=hsi_path)
-    series_name = get_series_name(path=hsi_path)
+    study_name = extract_study_name(path=hsi_path)
+    series_name = extract_series_name(path=hsi_path)
     body_part = extract_body_part(path=hsi_path)
     date, time = extract_time_stamp(path=hsi_path)
     temperature_idx, temperature = extract_temperature(path=hsi_path)
