@@ -14,3 +14,5 @@ ffmpeg-python==0.2.0
 supervisely==6.60.2
 scikit-image==0.19.3
 joblib==1.1.0
+ipyplot==1.1.1
+jupyter==1.0.0
