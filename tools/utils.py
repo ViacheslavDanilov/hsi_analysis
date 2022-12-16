@@ -1,11 +1,15 @@
 import os
 import re
+import shutil
 import logging
+import multiprocessing
 from pathlib import Path
+from functools import partial
 from typing import List, Union, Tuple, Optional
 
 import cv2
 import numpy as np
+from tqdm import tqdm
 from glob import glob
 from struct import unpack
 
@@ -301,3 +305,31 @@ def crop_image(
     output_img = input_img[:, idx * img_width:(idx + 1) * img_width]
 
     return output_img
+
+
+def copy_single_file(
+    file_path: str,
+    save_dir: str
+) -> None:
+    try:
+        shutil.copy(file_path, save_dir)
+    except Exception as e:
+        logging.info(f'Exception: {e}\nCould not copy {file_path}')
+
+
+def copy_files(
+    file_list: List[str],
+    save_dir: str
+) -> None:
+    os.makedirs(save_dir) if not os.path.isdir(save_dir) else False
+    num_cores = multiprocessing.cpu_count()
+    pool = multiprocessing.Pool(num_cores)
+    copy_func = partial(
+        copy_single_file,
+        save_dir=save_dir
+    )
+    pool.map(
+        copy_func,
+        tqdm(file_list, desc='Copy files', unit=' files')
+    )
+    pool.close()
