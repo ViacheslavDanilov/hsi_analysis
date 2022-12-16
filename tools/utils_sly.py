@@ -6,6 +6,12 @@ from typing import List, Optional
 import pandas as pd
 import supervisely_lib as sly
 
+CLASS_MAP = {
+    'Ablation': 1,
+}
+
+CLASS_MAP_REVERSED = dict((v, k) for k, v in CLASS_MAP.items())
+
 
 def read_sly_project(
     project_dir: str,
