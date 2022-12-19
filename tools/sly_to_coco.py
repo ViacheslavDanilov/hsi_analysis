@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 import argparse
 from pathlib import Path
@@ -129,7 +130,7 @@ def prepare_coco(
                 img_path=img_path,
                 img_id=img_id,
             )
-            # TODO: add support for COCO dataset parsing
+
             ann_data, ann_id = get_ann_info(
                 label_path=ann_path,
                 img_id=img_id,
@@ -144,12 +145,12 @@ def prepare_coco(
             'annotations': anns_coco,
             'categories': categories_coco,
         }
-    # TODO: verify saved files
-    # save_img_dir = os.path.join(save_dir, subset_name, 'data')
-    # copy_files(file_list=subset['images'], save_dir=save_img_dir)
-    # save_ann_path = os.path.join(save_dir, subset_name, 'labels.json')
-    # with open(save_ann_path, 'w') as file:
-    #     json.dump(dataset, file)
+
+        save_img_dir = os.path.join(save_dir, subset_name, 'data')
+        copy_files(file_list=subset['images'], save_dir=save_img_dir)
+        save_ann_path = os.path.join(save_dir, subset_name, 'labels.json')
+        with open(save_ann_path, 'w') as file:
+            json.dump(dataset, file)
 
 
 def main(
