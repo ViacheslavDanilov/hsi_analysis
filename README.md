@@ -1,4 +1,34 @@
 # Segmentation and analysis of hyperspectral images
+This repository is dedicated to the segmentation of [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging) during experimental surgery in animals.
+
+## Requirements
+
+- Linux or macOS (Windows has not been officially tested)
+- Python 3.8.x
+
+## Installation
+
+Step 1: Download and install Miniconda
+``` bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+```
+
+Step 2: Clone the repository, create a conda environment, and install the requirements for the repository
+``` bash
+git clone https://github.com/ViacheslavDanilov/oct_segmentation.git
+cd oct_segmentation
+chmod +x create_env.sh
+source create_env.sh
+```
+
+Step 3: Initialize git hooks using the pre-commit framework
+``` bash
+pre-commit install
+```
+
+## Data
 
 <table style="width:100%">
     <caption>
