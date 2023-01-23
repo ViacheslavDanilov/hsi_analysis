@@ -12,7 +12,7 @@ import pandas as pd
 from tqdm import tqdm
 import supervisely_lib as sly
 
-from tools.supervisely_utils import read_sly_project
+from tools.utils_sly import read_sly_project
 from tools.utils import crop_image, extract_body_part, extract_temperature
 
 
