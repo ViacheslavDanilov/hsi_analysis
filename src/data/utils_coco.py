@@ -4,7 +4,7 @@ from typing import Dict, Tuple, List, Any
 import cv2
 import supervisely_lib as sly
 
-from tools.utils_sly import CLASS_MAP
+from src.data.utils_sly import CLASS_MAP
 
 
 def get_img_info(

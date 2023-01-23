@@ -8,9 +8,9 @@ import pandas as pd
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
-from tools.utils import copy_files
-from tools.utils_coco import get_img_info, get_ann_info
-from tools.utils_sly import CLASS_MAP, read_sly_project
+from src.data.utils import copy_files
+from src.data.utils_coco import get_img_info, get_ann_info
+from src.data.utils_sly import CLASS_MAP, read_sly_project
 from settings import (
     SLY_PROJECT_DIR,
     INCLUDE_DIRS,

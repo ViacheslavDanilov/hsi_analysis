@@ -1,5 +1,4 @@
 import os
-import pickle
 import logging
 import argparse
 from pathlib import Path
@@ -8,15 +7,13 @@ from joblib import Parallel, delayed
 from typing import List, Union, Tuple, Optional
 
 import cv2
+import ffmpeg
 import imutils
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from sklearn.manifold import TSNE
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 
-from tools.utils import (
+from src.data.utils import (
     read_hsi,
     get_file_list,
     get_dir_list,
@@ -28,7 +25,7 @@ from tools.utils import (
     extract_time_stamp,
 )
 
-os.makedirs('../logs', exist_ok=True)
+os.makedirs('logs', exist_ok=True)
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%d.%m.%Y %H:%M:%S',
@@ -39,97 +36,57 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def reduce_dimensionality(
-    data: np.ndarray,
-    reduction_method: str = 'PCA',
-    num_components: int = 3,
-) -> Tuple[np.ndarray, List[float]]:
-
-    if reduction_method == 'TSNE':
-        tsne = TSNE(
-            n_components=num_components,
-            perplexity=30,
-            n_iter=300,
-            verbose=1,
-        )
-        data_reduced = tsne.fit_transform(data)
-        var_ratio = [np.nan for x in range(num_components)]
-    elif reduction_method == 'PCA':
-        pca = PCA(
-            n_components=num_components,
-            svd_solver='full',
-            random_state=11,
-        )
-        data_reduced = pca.fit_transform(data)
-        var_ratio = list(pca.explained_variance_ratio_)
-    else:
-        raise ValueError(f'Unknown reduction method: {reduction_method}')
-
-    return data_reduced, var_ratio
-
-
 def process_hsi(
         hsi_path: str,
         save_dir: str,
-        num_components: int = 3,
-        reduction_method: str = 'PCA',
         modality: str = 'absorbance',
-        color_map: Optional[str] = None,
+        color_map: str = None,
         apply_equalization: bool = False,
+        output_type: str = 'image',
         output_size: Tuple[int, int] = (744, 1000),
+        fps: int = 15,
 ) -> List:
 
-    # Extract meta information
+    assert output_type == 'image' or output_type == 'video', f'Incorrect output_type: {output_type}'
+
+    # Read HSI file and extract additional information
+    hsi = read_hsi(
+        path=hsi_path,
+        modality=modality,
+    )
     study_name = extract_study_name(path=hsi_path)
     series_name = extract_series_name(path=hsi_path)
     body_part = extract_body_part(path=hsi_path)
     temperature_idx, temperature = extract_temperature(path=hsi_path)
     date, time = extract_time_stamp(path=hsi_path)
 
-    # Read HSI file
-    hsi = read_hsi(
-        path=hsi_path,
-        modality=modality,
-    )
-    hsi_height, hsi_width, hsi_bands = hsi.shape
-    hsi_reshaped = hsi.reshape(hsi_height * hsi_width, hsi_bands)
-
-    # Normalize data
-    hsi_norm = StandardScaler().fit_transform(hsi_reshaped)
-
-    # Apply PCA or TSNE transformation
-    pickle_dir = os.path.join(Path(save_dir).parent, f'{modality}_pkl', study_name)
-    pickle_name = f'{series_name}.pkl'
-    pickle_path = os.path.join(pickle_dir, pickle_name)
-    os.makedirs(pickle_dir, exist_ok=True)
-    if Path(pickle_path).exists():
-        with open(pickle_path, 'rb') as f:
-            hsi_reduced, var_ratio = pickle.load(f)
-            logger.info(f'Load reduced HSI: {pickle_path}')
-            f.close()
-    elif not Path(pickle_path).exists():
-        hsi_reduced, var_ratio = reduce_dimensionality(
-            data=hsi_norm,
-            reduction_method=reduction_method,
-            num_components=num_components,
-        )
-        with open(pickle_path, 'wb') as f:
-            pickle.dump([hsi_reduced, var_ratio], f)
-            logger.info(f'Save reduced HSI: {pickle_path}')
-            f.close()
+    # Select output_dir based on output_type
+    if output_type == 'image':
+        output_dir = os.path.join(save_dir, study_name, series_name)
     else:
-        raise ValueError('Unexpected error appeared during reduction')
+        output_dir = os.path.join(save_dir, study_name)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Create video writer
+    if output_type == 'video':
+        video_path_temp = os.path.join(output_dir, f'{series_name}_temp.mp4')
+        _img = imutils.resize(hsi[:, :, 0], height=output_size[0], inter=cv2.INTER_LINEAR)
+        _img_size = _img.shape[:-1] if len(_img.shape) == 3 else _img.shape
+        video_height, video_width = _img_size
+        video = cv2.VideoWriter(
+            video_path_temp,
+            cv2.VideoWriter_fourcc(*'mp4v'),
+            fps,
+            (video_width, video_height),
+        )
 
     # Process HSI in an image-by-image fashion
-    save_dir = os.path.join(save_dir, study_name, series_name)
-    os.makedirs(save_dir, exist_ok=True)
     metadata = []
-    for idx in range(num_components):
+    for idx in range(hsi.shape[2]):
 
-        img = hsi_reduced[:, idx]
-        img = img.reshape(hsi_height, hsi_width)
+        img = hsi[:, :, idx]
         img_name = f'{idx+1:03d}.png'
-        img_path = os.path.join(save_dir, img_name)
+        img_path = os.path.join(output_dir, img_name)
 
         metadata.append(
             {
@@ -149,9 +106,8 @@ def process_hsi(
                 'Width': img.shape[1],
                 'Temperature ID': temperature_idx,
                 'Temperature': temperature,
-                'Method': reduction_method,
-                'PC': idx + 1,
-                'Variance': var_ratio[idx],
+                'Wavelength ID': idx + 1,
+                'Wavelength': 500 + 5 * idx,
             }
         )
 
@@ -173,7 +129,25 @@ def process_hsi(
         else:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
-        cv2.imwrite(img_path, img)
+        # Save image
+        if output_type == 'image':
+            cv2.imwrite(img_path, img)
+        elif output_type == 'video':
+            video.write(img)
+        else:
+            raise ValueError(f'Unknown output_type value: {output_type}')
+
+    video.release() if output_type == 'video' else False
+
+    # Replace OpenCV videos with FFmpeg ones
+    if output_type == 'video':
+        video_path = os.path.join(output_dir, f'{series_name}.mp4')
+        stream = ffmpeg.input(video_path_temp)
+        stream = ffmpeg.output(stream, video_path, vcodec='libx264', video_bitrate='10M')
+        ffmpeg.run(stream, quiet=True, overwrite_output=True)
+        os.remove(video_path_temp)
+
+    logger.info(f'HSI processed......: {hsi_path}')
 
     return metadata
 
@@ -181,12 +155,12 @@ def process_hsi(
 def main(
         input_dir: str,
         save_dir: str,
-        num_components: int = 3,
-        reduction_method: str = 'PCA',
         modality: str = 'absorbance',
         color_map: Optional[str] = None,
         apply_equalization: bool = False,
+        output_type: str = 'image',
         output_size: Tuple[int, int] = (744, 1000),
+        fps: int = 15,
         include_dirs: Optional[Union[List[str], str]] = None,
         exclude_dirs: Optional[Union[List[str], str]] = None,
 ) -> None:
@@ -195,13 +169,13 @@ def main(
     logger.info(f'Input dir..........: {input_dir}')
     logger.info(f'Included dirs......: {include_dirs}')
     logger.info(f'Excluded dirs......: {exclude_dirs}')
-    logger.info(f'Components.........: {num_components}')
-    logger.info(f'Reduction method...: {reduction_method}')
+    logger.info(f'Output dir.........: {save_dir}')
     logger.info(f'Modality...........: {modality}')
     logger.info(f'Color map..........: {color_map}')
     logger.info(f'Apply equalization.: {apply_equalization}')
+    logger.info(f'Output type........: {output_type}')
     logger.info(f'Output size........: {output_size}')
-    logger.info(f'Output dir.........: {save_dir}')
+    logger.info(f'FPS................: {fps if output_type == "video" else None}')
     logger.info('')
 
     # Filter the list of studied directories
@@ -223,16 +197,16 @@ def main(
     os.makedirs(save_dir, exist_ok=True)
     processing_func = partial(
         process_hsi,
-        num_components=num_components,
-        reduction_method=reduction_method,
         modality=modality,
         color_map=color_map,
         apply_equalization=apply_equalization,
+        output_type=output_type,
         output_size=output_size,
+        fps=fps,
         save_dir=save_dir,
     )
     result = Parallel(n_jobs=-1, prefer='threads')(
-        delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Reduce hyperspectral images', unit='HSI')
+        delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI')
     )
     metadata = sum(result, [])
 
@@ -254,33 +228,33 @@ def main(
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Reduce dimensionality of HSI cubes')
+    parser = argparse.ArgumentParser(description='Convert Hyperspectral Images')
     parser.add_argument('--input_dir', default='dataset/HSI', type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--num_components', default=3, type=int)
-    parser.add_argument('--reduction_method', default='PCA', type=str, choices=['PCA', 'TSNE'])
     parser.add_argument('--modality',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
     parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
     parser.add_argument('--apply_equalization', action='store_true')
+    parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
-    parser.add_argument('--save_dir', default='dataset', type=str)
+    parser.add_argument('--fps', default=15, type=int)
+    parser.add_argument('--save_dir', default='dataset/HSI_processed', type=str)
     args = parser.parse_args()
 
     if args.color_map is not None:
-        args.save_dir = os.path.join(args.save_dir, args.reduction_method, args.color_map)
+        args.save_dir = os.path.join(args.save_dir, args.color_map)
     else:
-        args.save_dir = os.path.join(args.save_dir, args.reduction_method, args.modality)
+        args.save_dir = os.path.join(args.save_dir, args.modality)
 
     main(
         input_dir=args.input_dir,
         include_dirs=args.include_dirs,
         exclude_dirs=args.exclude_dirs,
-        reduction_method=args.reduction_method,
         modality=args.modality,
-        num_components=args.num_components,
         color_map=args.color_map,
         apply_equalization=args.apply_equalization,
+        output_type=args.output_type,
         output_size=tuple(args.output_size),
+        fps=args.fps,
         save_dir=args.save_dir,
     )

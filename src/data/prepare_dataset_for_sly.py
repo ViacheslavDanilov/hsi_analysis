@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tqdm import tqdm
 
-from tools.utils import get_file_list, extract_study_name, extract_series_name
+from src.data.utils import get_file_list, extract_study_name, extract_series_name
 
 os.makedirs('../logs', exist_ok=True)
 logging.basicConfig(

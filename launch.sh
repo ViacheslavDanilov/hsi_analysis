@@ -9,4 +9,4 @@
 
 conda activate hsi
 
-python tools/reduce_dimensionality.py --reduction_method TSNE --modality absorbance --apply_equalization --input_dir /global-scratch/bulk_pool/vdanilov/projects/hsi_analysis/dataset/HSI --save_dir /global-scratch/bulk_pool/vdanilov/projects/hsi_analysis/dataset
+python src/data/reduce_dimensionality.py --reduction_method TSNE --modality absorbance --apply_equalization --input_dir /global-scratch/bulk_pool/vdanilov/projects/hsi_analysis/dataset/HSI --save_dir /global-scratch/bulk_pool/vdanilov/projects/hsi_analysis/dataset

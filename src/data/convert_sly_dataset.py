@@ -12,8 +12,8 @@ import pandas as pd
 from tqdm import tqdm
 import supervisely_lib as sly
 
-from tools.utils_sly import read_sly_project
-from tools.utils import crop_image, extract_body_part, extract_temperature
+from src.data.utils_sly import read_sly_project
+from src.data.utils import crop_image, extract_body_part, extract_temperature
 
 
 os.makedirs('logs', exist_ok=True)
