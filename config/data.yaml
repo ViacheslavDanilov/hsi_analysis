@@ -1,3 +1,13 @@
 defaults:
-  - main
-  - _self_
+- main
+- _self_
+
+interim:
+  input_dir: data/interim
+  include_dirs: []
+  exclude_dirs: []
+  abs: true
+  ref: false
+  pca: true
+  tsne: true
+  save_dir: data/coco
