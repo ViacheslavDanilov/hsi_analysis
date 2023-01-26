@@ -1,14 +1,16 @@
 import unittest
+
 import numpy as np
-from tools.utils import read_hsi
+
+from src.data.utils import read_hsi
 
 
 class TestReadData(unittest.TestCase):
     def test_reading(self):
-        path = 'dataset/Test 1 - Liver LA contactless switching off laser/HSI/2019_08_30_10_00_39/2019_08_30_10_00_39_SpecCube.dat'
+        path = 'data/raw/30_08_2019_test_01_liver/10_00_39_T6=110/SpecCube.dat'
         data = read_hsi(path)
         self.assertTrue(np.mean(data), float)
-        self.assertEqual(round(float(np.mean(data)), 6), 0.501764)
+        self.assertEqual(round(float(np.mean(data)), 6), 0.431974)
 
     def test_values(self):
         self.assertRaises(ValueError, read_hsi, 'unknown_dir/unknown_file.dat')
@@ -16,11 +18,10 @@ class TestReadData(unittest.TestCase):
 
     def test_types(self):
         self.assertRaises(ValueError, read_hsi, -1)
-        self.assertRaises(ValueError, read_hsi, 5+11j)
+        self.assertRaises(ValueError, read_hsi, 5 + 11j)
         self.assertRaises(ValueError, read_hsi, [11, 14, 19])
         self.assertRaises(ValueError, read_hsi, True)
 
 
 if __name__ == '__main__':
-
     unittest.main()
