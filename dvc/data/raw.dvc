@@ -1,0 +1,5 @@
+wdir: ../../data
+outs:
+- md5: 70f55519ae030014fd3b73c74793abfa
+  size: 33444705179
+  path: raw.zip

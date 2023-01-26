@@ -1,5 +1,5 @@
 # Segmentation and analysis of hyperspectral images
-This repository is dedicated to the segmentation of [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging) during experimental surgery in animals.
+This repository is dedicated to the segmentation of [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging) during experimental animal surgery.
 
 ## Requirements
 
@@ -15,7 +15,25 @@ chmod +x Miniconda3-latest-Linux-x86_64.sh
 ./Miniconda3-latest-Linux-x86_64.sh
 ```
 
-Step 2: Clone the repository, create a conda environment, and install the requirements for the repository
+Step 2: Install FFmpeg and verify that the installation is correct
+
+- Linux
+``` bash
+sudo apt update
+sudo apt upgrade
+sudo apt install ffmpeg
+ffmpeg -version
+```
+
+- macOS
+``` bash
+brew update
+brew upgrade
+brew install ffmpeg
+ffmpeg
+```
+
+Step 3: Clone the repository, create a conda environment, and install the requirements for the repository
 ``` bash
 git clone https://github.com/ViacheslavDanilov/oct_segmentation.git
 cd oct_segmentation
@@ -23,7 +41,7 @@ chmod +x create_env.sh
 source create_env.sh
 ```
 
-Step 3: Initialize git hooks using the pre-commit framework
+Step 4: Initialize git hooks using the pre-commit framework
 ``` bash
 pre-commit install
 ```
@@ -45,7 +63,7 @@ pre-commit install
         <td valign="middle" align="center"><img src="media/absorbance_start.png"  alt="Absorbance (start)" width="225"></td>
         <td valign="middle" align="center"><img src="media/hsv_start.png" alt="HSV (start)" width="225"></td>
         <td valign="middle" align="center"><img src="media/reflectance_start.png" alt="Reflectance (start)" width="225"></td>
-    </tr> 
+    </tr>
     <tr>
         <td valign="middle" align="center">Middle</td>
         <td valign="middle" align="center"><img src="media/absorbance_mid.png"  alt="Absorbance (mid)" width="225"></td>
