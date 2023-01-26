@@ -1,5 +1,0 @@
-wdir: ../../data
-outs:
-- md5: 1267bff8e00c226846a1b412aeafd7eb
-  size: 4190926472
-  path: tsne.zip
