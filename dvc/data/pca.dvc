@@ -1,0 +1,5 @@
+wdir: ../../data
+outs:
+- md5: 4b292133faf3aa958a649bc6e60c7050
+  size: 3039491696
+  path: pca.zip
