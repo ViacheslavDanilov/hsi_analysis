@@ -1,31 +1,31 @@
+import argparse
+import logging
 import os
 import pickle
-import logging
-import argparse
-from pathlib import Path
 from functools import partial
-from joblib import Parallel, delayed
-from typing import List, Union, Tuple, Optional
+from pathlib import Path
+from typing import List, Optional, Tuple, Union
 
 import cv2
 import imutils
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from sklearn.manifold import TSNE
+from joblib import Parallel, delayed
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
+from tqdm import tqdm
 
 from src.data.utils import (
-    read_hsi,
-    get_file_list,
-    get_dir_list,
-    extract_study_name,
-    extract_series_name,
-    get_color_map,
     extract_body_part,
+    extract_series_name,
+    extract_study_name,
     extract_temperature,
     extract_time_stamp,
+    get_color_map,
+    get_dir_list,
+    get_file_list,
+    read_hsi,
 )
 
 os.makedirs('../logs', exist_ok=True)
@@ -41,11 +41,11 @@ logger = logging.getLogger(__name__)
 
 def reduce_dimensionality(
     data: np.ndarray,
-    reduction_method: str = 'PCA',
+    reduction_method: str = 'pca',
     num_components: int = 3,
 ) -> Tuple[np.ndarray, List[float]]:
 
-    if reduction_method == 'TSNE':
+    if reduction_method == 'tsne':
         tsne = TSNE(
             n_components=num_components,
             perplexity=30,
@@ -54,7 +54,7 @@ def reduce_dimensionality(
         )
         data_reduced = tsne.fit_transform(data)
         var_ratio = [np.nan for x in range(num_components)]
-    elif reduction_method == 'PCA':
+    elif reduction_method == 'pca':
         pca = PCA(
             n_components=num_components,
             svd_solver='full',
@@ -69,14 +69,14 @@ def reduce_dimensionality(
 
 
 def process_hsi(
-        hsi_path: str,
-        save_dir: str,
-        num_components: int = 3,
-        reduction_method: str = 'PCA',
-        modality: str = 'absorbance',
-        color_map: Optional[str] = None,
-        apply_equalization: bool = False,
-        output_size: Tuple[int, int] = (744, 1000),
+    hsi_path: str,
+    save_dir: str,
+    num_components: int = 3,
+    reduction_method: str = 'pca',
+    modality: str = 'abs',
+    color_map: Optional[str] = None,
+    apply_equalization: bool = False,
+    output_size: Tuple[int, int] = (744, 1000),
 ) -> List:
 
     # Extract meta information
@@ -121,14 +121,14 @@ def process_hsi(
         raise ValueError('Unexpected error appeared during reduction')
 
     # Process HSI in an image-by-image fashion
-    save_dir = os.path.join(save_dir, study_name, series_name)
+    save_dir = os.path.join(save_dir, study_name)
     os.makedirs(save_dir, exist_ok=True)
     metadata = []
     for idx in range(num_components):
 
         img = hsi_reduced[:, idx]
         img = img.reshape(hsi_height, hsi_width)
-        img_name = f'{idx+1:03d}.png'
+        img_name = f'{series_name}_{idx+1:03d}.png'
         img_path = os.path.join(save_dir, img_name)
 
         metadata.append(
@@ -152,7 +152,7 @@ def process_hsi(
                 'Method': reduction_method,
                 'PC': idx + 1,
                 'Variance': var_ratio[idx],
-            }
+            },
         )
 
         # Resize and normalize image
@@ -179,16 +179,16 @@ def process_hsi(
 
 
 def main(
-        input_dir: str,
-        save_dir: str,
-        num_components: int = 3,
-        reduction_method: str = 'PCA',
-        modality: str = 'absorbance',
-        color_map: Optional[str] = None,
-        apply_equalization: bool = False,
-        output_size: Tuple[int, int] = (744, 1000),
-        include_dirs: Optional[Union[List[str], str]] = None,
-        exclude_dirs: Optional[Union[List[str], str]] = None,
+    input_dir: str,
+    save_dir: str,
+    num_components: int = 3,
+    reduction_method: str = 'PCA',
+    modality: str = 'absorbance',
+    color_map: Optional[str] = None,
+    apply_equalization: bool = False,
+    output_size: Tuple[int, int] = (744, 1000),
+    include_dirs: Optional[Union[List[str], str]] = None,
+    exclude_dirs: Optional[Union[List[str], str]] = None,
 ) -> None:
 
     # Log main parameters
@@ -232,7 +232,8 @@ def main(
         save_dir=save_dir,
     )
     result = Parallel(n_jobs=-1, prefer='threads')(
-        delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Reduce hyperspectral images', unit='HSI')
+        delayed(processing_func)(group)
+        for group in tqdm(hsi_paths, desc='Reduce hyperspectral images', unit='HSI')
     )
     metadata = sum(result, [])
 
@@ -255,16 +256,21 @@ def main(
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Reduce dimensionality of HSI cubes')
-    parser.add_argument('--input_dir', default='dataset/HSI', type=str)
+    parser.add_argument('--input_dir', default='data/raw', type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--num_components', default=3, type=int)
-    parser.add_argument('--reduction_method', default='PCA', type=str, choices=['PCA', 'TSNE'])
-    parser.add_argument('--modality',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
-    parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
+    parser.add_argument('--reduction_method', default='pca', type=str, choices=['pca', 'tsne'])
+    parser.add_argument('--modality', default='abs', type=str, choices=['abs', 'ref'])
+    parser.add_argument(
+        '--color_map',
+        default=None,
+        type=str,
+        choices=['jet', 'bone', 'ocean', 'cool', 'hsv'],
+    )
     parser.add_argument('--apply_equalization', action='store_true')
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
-    parser.add_argument('--save_dir', default='dataset', type=str)
+    parser.add_argument('--save_dir', default='data/sly_input', type=str)
     args = parser.parse_args()
 
     if args.color_map is not None:

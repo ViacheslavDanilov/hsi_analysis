@@ -1,28 +1,28 @@
-import os
-import logging
 import argparse
-from pathlib import Path
+import logging
+import os
 from functools import partial
-from joblib import Parallel, delayed
-from typing import List, Union, Tuple, Optional
+from pathlib import Path
+from typing import List, Optional, Tuple, Union
 
 import cv2
 import ffmpeg
 import imutils
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 from tqdm import tqdm
 
 from src.data.utils import (
-    read_hsi,
-    get_file_list,
-    get_dir_list,
-    extract_study_name,
-    extract_series_name,
-    get_color_map,
     extract_body_part,
+    extract_series_name,
+    extract_study_name,
     extract_temperature,
     extract_time_stamp,
+    get_color_map,
+    get_dir_list,
+    get_file_list,
+    read_hsi,
 )
 
 os.makedirs('logs', exist_ok=True)
@@ -37,14 +37,14 @@ logger = logging.getLogger(__name__)
 
 
 def process_hsi(
-        hsi_path: str,
-        save_dir: str,
-        modality: str = 'absorbance',
-        color_map: str = None,
-        apply_equalization: bool = False,
-        output_type: str = 'image',
-        output_size: Tuple[int, int] = (744, 1000),
-        fps: int = 15,
+    hsi_path: str,
+    save_dir: str,
+    modality: str = 'abs',
+    color_map: str = None,
+    apply_equalization: bool = False,
+    output_type: str = 'image',
+    output_size: Tuple[int, int] = (744, 1000),
+    fps: int = 15,
 ) -> List:
 
     assert output_type == 'image' or output_type == 'video', f'Incorrect output_type: {output_type}'
@@ -108,7 +108,7 @@ def process_hsi(
                 'Temperature': temperature,
                 'Wavelength ID': idx + 1,
                 'Wavelength': 500 + 5 * idx,
-            }
+            },
         )
 
         # Resize and normalize image
@@ -153,16 +153,16 @@ def process_hsi(
 
 
 def main(
-        input_dir: str,
-        save_dir: str,
-        modality: str = 'absorbance',
-        color_map: Optional[str] = None,
-        apply_equalization: bool = False,
-        output_type: str = 'image',
-        output_size: Tuple[int, int] = (744, 1000),
-        fps: int = 15,
-        include_dirs: Optional[Union[List[str], str]] = None,
-        exclude_dirs: Optional[Union[List[str], str]] = None,
+    input_dir: str,
+    save_dir: str,
+    modality: str = 'abs',
+    color_map: Optional[str] = None,
+    apply_equalization: bool = False,
+    output_type: str = 'image',
+    output_size: Tuple[int, int] = (744, 1000),
+    fps: int = 15,
+    include_dirs: Optional[Union[List[str], str]] = None,
+    exclude_dirs: Optional[Union[List[str], str]] = None,
 ) -> None:
 
     # Log main parameters
@@ -206,7 +206,8 @@ def main(
         save_dir=save_dir,
     )
     result = Parallel(n_jobs=-1, prefer='threads')(
-        delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI')
+        delayed(processing_func)(group)
+        for group in tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI')
     )
     metadata = sum(result, [])
 
@@ -232,8 +233,13 @@ if __name__ == '__main__':
     parser.add_argument('--input_dir', default='dataset/HSI', type=str)
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--modality',  default='absorbance', type=str, choices=['absorbance', 'reflectance'])
-    parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
+    parser.add_argument('--modality', default='abs', type=str, choices=['abs', 'ref'])
+    parser.add_argument(
+        '--color_map',
+        default=None,
+        type=str,
+        choices=['jet', 'bone', 'ocean', 'cool', 'hsv'],
+    )
     parser.add_argument('--apply_equalization', action='store_true')
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
