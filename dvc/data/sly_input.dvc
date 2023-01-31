@@ -1,0 +1,5 @@
+wdir: ../../data
+outs:
+- md5: f7c82c42e1aecefce47a7fea0b14ad0a
+  size: 7493904894
+  path: sly_input.zip
