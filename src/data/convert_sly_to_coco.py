@@ -9,6 +9,8 @@ from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map
 
+from src.data.utils import get_dir_list
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
