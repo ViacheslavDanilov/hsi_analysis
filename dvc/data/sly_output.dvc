@@ -1,0 +1,5 @@
+wdir: ../../data
+outs:
+- md5: f21ae2290dbada585ad18bad2ea4fa17
+  size: 2618291030
+  path: sly_output.zip

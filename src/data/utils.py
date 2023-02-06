@@ -1,25 +1,24 @@
+import logging
+import multiprocessing
 import os
 import re
 import shutil
-import logging
-import multiprocessing
-from pathlib import Path
 from functools import partial
-from typing import List, Union, Tuple, Optional
+from glob import glob
+from pathlib import Path
+from struct import unpack
+from typing import List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
 from tqdm import tqdm
-from glob import glob
-from struct import unpack
 
 
 def read_hsi(
     path: str,
-    modality: str = 'absorbance',
+    modality: str = 'abs',
 ) -> np.ndarray:
-    """
-    Read HSI images (.dat files) as a numpy array (H, W, WL)
+    """Read HSI images (.dat files) as a numpy array (H, W, WL).
 
     Args:
         path: a path to a .dat file being read
@@ -27,13 +26,14 @@ def read_hsi(
     Returns:
         data: HSI represented in a 3D NumPy array
     """
-
     if not isinstance(path, str):
-        raise ValueError(f"Invalid data type: {type(path)}")
+        raise ValueError(f'Invalid data type: {type(path)}')
     elif not os.path.isfile(path):
         raise ValueError(f"The file doesn't exist: {path}")
     elif not path.lower().endswith('.dat'):
-        raise ValueError(f"The file with extension {Path(path).suffix} is not supported at the moment")
+        raise ValueError(
+            f'The file with extension {Path(path).suffix} is not supported at the moment',
+        )
     else:
         pass
 
@@ -45,9 +45,9 @@ def read_hsi(
         data = np.transpose(data, (1, 0, 2))
         data = data[::-1, ::1, :]
 
-        if modality == 'reflectance':
+        if modality == 'ref':
             pass
-        elif modality == 'absorbance':
+        elif modality == 'abs':
             data = -np.log10(np.maximum(data, 0.01))
         else:
             raise ValueError(f'Invalid data type: {modality}')
@@ -109,8 +109,7 @@ def get_file_list(
     ext_list: Union[List[str], str],
     include_template: str = '',
 ) -> List[str]:
-    """
-    Get list of files with the specified extensions
+    """Get list of files with the specified extensions.
 
     Args:
         src_dirs: directory(s) with files inside
@@ -119,20 +118,16 @@ def get_file_list(
     Returns:
         all_files: a list of file paths
     """
-
     all_files = []
-    src_dirs = [src_dirs, ] if isinstance(src_dirs, str) else src_dirs
-    ext_list = [ext_list, ] if isinstance(ext_list, str) else ext_list
+    src_dirs = [src_dirs] if isinstance(src_dirs, str) else src_dirs
+    ext_list = [ext_list] if isinstance(ext_list, str) else ext_list
     for src_dir in src_dirs:
         for root, dirs, files in os.walk(src_dir):
             for file in files:
                 file_ext = Path(file).suffix
                 file_ext = file_ext.lower()
                 dir_name = os.path.basename(root)
-                if (
-                        file_ext in ext_list
-                        and include_template in dir_name
-                ):
+                if file_ext in ext_list and include_template in dir_name:
                     file_path = os.path.join(root, file)
                     all_files.append(file_path)
     all_files.sort()
@@ -144,8 +139,7 @@ def get_dir_list(
     include_dirs: Optional[Union[List[str], str]] = None,
     exclude_dirs: Optional[Union[List[str], str]] = None,
 ) -> List[str]:
-    """
-    Filter the list of studied directories
+    """Filter the list of studied directories.
 
     Args:
         data_dir: source directory with subdirectories
@@ -155,9 +149,8 @@ def get_dir_list(
     Returns:
         dir_list: filtered list of studied directories
     """
-
-    include_dirs = [include_dirs, ] if isinstance(include_dirs, str) else include_dirs
-    exclude_dirs = [exclude_dirs, ] if isinstance(exclude_dirs, str) else exclude_dirs
+    include_dirs = [include_dirs] if isinstance(include_dirs, str) else include_dirs
+    exclude_dirs = [exclude_dirs] if isinstance(exclude_dirs, str) else exclude_dirs
 
     dir_list = []
     _dir_list = glob(data_dir + '/*/')
@@ -165,16 +158,16 @@ def get_dir_list(
         if include_dirs and Path(studied_dir).name not in include_dirs:
             logging.info(
                 'Skip {:s} because it is not in the include_dirs list'.format(
-                    Path(studied_dir).name
-                )
+                    Path(studied_dir).name,
+                ),
             )
             continue
 
         if exclude_dirs and Path(studied_dir).name in exclude_dirs:
             logging.info(
                 'Skip {:s} because it is in the exclude_dirs list'.format(
-                    Path(studied_dir).name
-                )
+                    Path(studied_dir).name,
+                ),
             )
             continue
 
@@ -199,15 +192,13 @@ def extract_series_name(
 def extract_body_part(
     path: str,
 ) -> str:
-    """
-    Extract a body part name based on the HSI path
+    """Extract a body part name based on the HSI path.
 
     Args:
         path: a path to a file
     Returns:
         body_part:
     """
-
     if 'liver' in path.lower():
         body_part = 'Liver'
     elif 'pancreas' in path.lower():
@@ -243,8 +234,7 @@ def extract_temperature(
 def extract_time_stamp(
     path: str,
 ) -> Tuple[str, str]:
-    """
-    Extract a time stamp from the HSI path
+    """Extract a time stamp from the HSI path.
 
     Args:
         path: a path to filename with an unstructured time stamp
@@ -252,7 +242,6 @@ def extract_time_stamp(
         date: a date string in format DD.MM.YYYY
         time: a time string in format HH:MM:SS
     """
-
     study_name = extract_study_name(path)
     series_name = extract_series_name(path)
 
@@ -288,28 +277,30 @@ def get_color_map(
 
 def crop_image(
     input_img: np.ndarray,
-    img_type: str = 'absorbance',
+    modality: str = 'abs',
 ) -> np.ndarray:
-    assert input_img.shape[1] % 3 == 0, 'Input image width should be divisible by 3 (contain 3 sub-images)'
+    assert (
+        input_img.shape[1] % 3 == 0
+    ), 'Input image width should be divisible by 3 (contain 3 sub-images)'
 
     img_width = int(input_img.shape[1] / 3)
-    if img_type == 'absorbance':
+    if modality == 'abs':
         idx = 0
-    elif img_type == 'hsv':
+    elif modality == 'hsv':
         idx = 1
-    elif img_type == 'reflectance':
+    elif modality == 'ref':
         idx = 2
     else:
-        raise ValueError(f'Invalid img_type: {img_type}')
+        raise ValueError(f'Invalid img_type: {modality}')
 
-    output_img = input_img[:, idx * img_width:(idx + 1) * img_width]
+    output_img = input_img[:, idx * img_width : (idx + 1) * img_width]
 
     return output_img
 
 
 def copy_single_file(
     file_path: str,
-    save_dir: str
+    save_dir: str,
 ) -> None:
     try:
         shutil.copy(file_path, save_dir)
@@ -319,17 +310,17 @@ def copy_single_file(
 
 def copy_files(
     file_list: List[str],
-    save_dir: str
+    save_dir: str,
 ) -> None:
     os.makedirs(save_dir) if not os.path.isdir(save_dir) else False
     num_cores = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(num_cores)
     copy_func = partial(
         copy_single_file,
-        save_dir=save_dir
+        save_dir=save_dir,
     )
     pool.map(
         copy_func,
-        tqdm(file_list, desc='Copy files', unit=' files')
+        tqdm(file_list, desc='Copy files', unit=' files'),
     )
     pool.close()

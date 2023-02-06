@@ -1,5 +1,0 @@
-wdir: ../../data
-outs:
-- md5: 31520304a16b40a272a95e487ed13a5a
-  size: 7494704283
-  path: interim.zip
