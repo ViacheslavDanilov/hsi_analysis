@@ -2,12 +2,15 @@ defaults:
 - main
 - _self_
 
-interim:
-  input_dir: data/interim
+conversion:
+  src_dir: data/sly_output
   include_dirs: []
   exclude_dirs: []
+  pca: false
+  tsne: true
   abs: true
   ref: false
-  pca: true
-  tsne: true
+  box_extension: {Ablation: [0, 0]}   # class: (horizontal, vertical)
+  train_size: 0.80
+  seed: 11
   save_dir: data/coco

@@ -1,5 +1,5 @@
-import os
-from typing import Dict, Tuple, List, Any
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
 
 import cv2
 import supervisely_lib as sly
@@ -11,12 +11,15 @@ def get_img_info(
     img_path: str,
     img_id: int,
 ) -> Dict[str, Any]:
-    img_data = {}
+    img_data: Dict[str, Union[int, str]] = {}
     height, width = cv2.imread(img_path).shape[:2]
-    img_data['id'] = img_id     # Unique image ID
+    img_data['id'] = img_id  # Unique image ID
     img_data['width'] = width
     img_data['height'] = height
-    img_data['file_name'] = os.path.basename(img_path)
+    reduction = Path(img_path).parts[-5]
+    modality = Path(img_path).parts[-4]
+    img_name = Path(img_path).name
+    img_data['file_name'] = f'{reduction}_{modality}_{img_name}'
     return img_data
 
 
@@ -37,11 +40,11 @@ def get_ann_info(
         box_extension_class = box_extension[class_name]
         x1, y1 = (
             figure.left - box_extension_class[0],
-            figure.top - box_extension_class[1]
+            figure.top - box_extension_class[1],
         )
         x2, y2 = (
             figure.right + box_extension_class[0],
-            figure.bottom + box_extension_class[1]
+            figure.bottom + box_extension_class[1],
         )
         width = abs(x2 - x1 + 1)
         height = abs(y2 - y1 + 1)
