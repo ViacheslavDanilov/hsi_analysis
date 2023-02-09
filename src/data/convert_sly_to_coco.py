@@ -1,19 +1,20 @@
+import json
 import logging
-import multiprocessing
 import os
-from functools import partial
+import shutil
 from glob import glob
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import hydra
 import pandas as pd
 from omegaconf import DictConfig, OmegaConf
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-from tqdm.contrib.concurrent import process_map
 
 from src.data.utils import extract_body_part, extract_study_name, extract_temperature, get_file_list
+from src.data.utils_coco import get_ann_info, get_img_info
+from src.data.utils_sly import CLASS_MAP
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -102,7 +103,7 @@ def split_dataset(
     }
 
     df_temp = df[['body_part', 'series']]
-    df_temp.drop_duplicates(inplace=True)
+    df_temp = df_temp.drop_duplicates()
     series_train, series_test = train_test_split(
         df_temp['series'],
         train_size=train_size,
@@ -153,16 +154,65 @@ def split_dataset(
     return subsets
 
 
-# TODO: Verify if this is still needed
-def convert_single_study(
-    study_dir: str,
-    output_type: str,
-    output_size: Tuple[int, int],
-    to_gray: bool,
-    fps: int,
+def prepare_coco_subsets(
+    subsets: dict,
+    box_extension: dict,
     save_dir: str,
 ) -> None:
-    print('')
+    """Preparation of COCO subsets for training and testing.
+
+    Args:
+        subsets: dictionary which contains image/annotation paths for train and test subsets
+        save_dir: directory where split datasets are saved to
+        box_extension: a value used to extend or contract object box sizes
+    Returns:
+        None
+    """
+    categories_coco = []
+    for idx, (key, value) in enumerate(CLASS_MAP.items()):
+        categories_coco.append({'id': value, 'name': key})
+
+    for subset_name, subset in subsets.items():
+        imgs_coco = []
+        anns_coco = []
+        ann_id = 0
+
+        save_img_dir = os.path.join(save_dir, subset_name, 'data')
+        os.makedirs(save_img_dir, exist_ok=True)
+        for img_id, (img_path, ann_path) in tqdm(
+            enumerate(zip(subset['images'], subset['labels'])),
+            desc=f'{subset_name.capitalize()} subset processing',
+            unit=' sample',
+        ):
+            img_data = get_img_info(
+                img_path=img_path,
+                img_id=img_id,
+            )
+
+            ann_data, ann_id = get_ann_info(
+                label_path=ann_path,
+                img_id=img_id,
+                ann_id=ann_id,
+                box_extension=box_extension,
+            )
+            imgs_coco.append(img_data)
+            anns_coco.extend(ann_data)
+
+            img_save_path = os.path.join(save_img_dir, img_data['file_name'])
+            shutil.copy(
+                src=img_path,
+                dst=img_save_path,
+            )
+
+        dataset = {
+            'images': imgs_coco,
+            'annotations': anns_coco,
+            'categories': categories_coco,
+        }
+
+        ann_save_path = os.path.join(save_dir, subset_name, 'labels.json')
+        with open(ann_save_path, 'w') as file:
+            json.dump(dataset, file)
 
 
 @hydra.main(config_path=os.path.join(os.getcwd(), 'config'), config_name='data', version_base=None)
@@ -210,23 +260,29 @@ def main(cfg: DictConfig) -> None:
         seed=cfg.conversion.seed,
     )
 
-    # TODO: prepare COCO dataset
+    # Prepare COCO subsets
+    names = []
 
-    # Process data in parallel
-    num_cores = multiprocessing.cpu_count()
-    conversion_func = partial(
-        convert_single_study,
-        output_type=cfg.conversion.output_type,
-        output_size=cfg.conversion.output_size,
-        to_gray=cfg.conversion.to_gray,
-        fps=cfg.conversion.fps,
-        save_dir=cfg.conversion.save_dir,
+    if cfg.conversion.tsne:
+        names.append('tsne')
+
+    if cfg.conversion.pca:
+        names.append('pca')
+
+    if cfg.conversion.abs:
+        names.append('abs')
+
+    if cfg.conversion.ref:
+        names.append('ref')
+
+    dir_name = '_'.join(names)
+    save_dir = os.path.join(cfg.conversion.save_dir, dir_name)
+    prepare_coco_subsets(
+        subsets=subsets,
+        box_extension=dict(cfg.conversion.box_extension),
+        save_dir=save_dir,
     )
-    process_map(
-        conversion_func,
-        tqdm(ann_list, desc='Convert studies', unit=' study'),
-        max_workers=num_cores,
-    )
+
     log.info('Complete')
 
 

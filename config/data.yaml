@@ -10,6 +10,7 @@ conversion:
   tsne: true
   abs: true
   ref: false
+  box_extension: {Ablation: [0, 0]}   # class: (horizontal, vertical)
   train_size: 0.80
   seed: 11
   save_dir: data/coco
