@@ -4,7 +4,7 @@ import os
 import shutil
 from glob import glob
 from pathlib import Path
-from typing import Dict, List
+from typing import List
 
 import hydra
 import pandas as pd
@@ -63,22 +63,24 @@ def add_metadata(
     Returns:
         df: an updated data frame with split series into series names and PCs
     """
+    df['img_name'] = df['img_path'].apply(lambda x: Path(x).name)
+    df['ann_name'] = df['ann_path'].apply(lambda x: Path(x).name)
     df['stem'] = df['img_path'].apply(lambda x: Path(x).stem)
-    df['component'] = df['stem'].apply(lambda x: int(x.split('_')[-1]))
-    df['body_part'] = df['img_path'].apply(extract_body_part)
-    df['temperature'] = df['stem'].apply(lambda x: extract_temperature)
-
-    for idx, row in df.iterrows():
-        temperature_idx, temperature_ = extract_temperature(row['stem'])
-        temperature = temperature_.split('_')[0]
-        df.at[idx, 'temperature_idx'] = temperature_idx
-        df.at[idx, 'temperature'] = temperature
-
     for idx, row in df.iterrows():
         symbol_idx = row['stem'].rfind('_')
         series_name = row['stem'][:symbol_idx]
         df.at[idx, 'series'] = series_name
     df['study'] = df['img_path'].apply(extract_study_name)
+    df['reduction'] = df['img_path'].apply(lambda x: Path(x).parts[-5])
+    df['modality'] = df['img_path'].apply(lambda x: Path(x).parts[-4])
+    df['component'] = df['stem'].apply(lambda x: int(x.split('_')[-1]))
+    df['body_part'] = df['img_path'].apply(extract_body_part)
+    df['temperature'] = df['stem'].apply(lambda x: extract_temperature)
+    for idx, row in df.iterrows():
+        temperature_idx, temperature_ = extract_temperature(row['stem'])
+        temperature = temperature_.split('_')[0]
+        df.at[idx, 'temperature_idx'] = temperature_idx
+        df.at[idx, 'temperature'] = temperature
 
     return df
 
@@ -87,7 +89,7 @@ def split_dataset(
     df: pd.DataFrame,
     train_size: float = 0.80,
     seed: int = 11,
-) -> dict:
+) -> pd.DataFrame:
     """Split dataset into training and test subsets.
 
     Args:
@@ -97,11 +99,6 @@ def split_dataset(
     Returns:
         subsets: dictionary which contains image/annotation paths for train and test subsets
     """
-    subsets: Dict[str, Dict[str, List[str]]] = {
-        'train': {'images': [], 'labels': []},
-        'test': {'images': [], 'labels': []},
-    }
-
     df_temp = df[['body_part', 'series']]
     df_temp = df_temp.drop_duplicates()
     series_train, series_test = train_test_split(
@@ -113,18 +110,11 @@ def split_dataset(
     )
 
     df_train = df[df['series'].isin(series_train)]
+    df_train = df_train.assign(split='train')
     df_test = df[df['series'].isin(series_test)]
-
-    subsets['train']['images'].extend(df_train['img_path'])
-    subsets['train']['labels'].extend(df_train['ann_path'])
-    subsets['test']['images'].extend(df_test['img_path'])
-    subsets['test']['labels'].extend(df_test['ann_path'])
-    assert len(subsets['train']['images']) == len(
-        subsets['train']['labels'],
-    ), 'Mismatch length of the training subset'
-    assert len(subsets['test']['images']) == len(
-        subsets['test']['labels'],
-    ), 'Mismatch length of the testing subset'
+    df_test = df_test.assign(split='test')
+    df_out = pd.concat([df_train, df_test])
+    df_out.reset_index(drop=True, inplace=True)
 
     log.info('')
     log.info(f'Split............: Train / Test')
@@ -151,18 +141,18 @@ def split_dataset(
             f'Relative.........: {df_train_dist.loc[body_part, "Rel"]:.2f}/{df_test_dist.loc[body_part, "Rel"]:.2f}',
         )
 
-    return subsets
+    return df_out
 
 
 def prepare_coco_subsets(
-    subsets: dict,
+    df: pd.DataFrame,
     box_extension: dict,
     save_dir: str,
 ) -> None:
     """Preparation of COCO subsets for training and testing.
 
     Args:
-        subsets: dictionary which contains image/annotation paths for train and test subsets
+        df: dataframe which contains image/annotation paths for train and test subsets
         save_dir: directory where split datasets are saved to
         box_extension: a value used to extend or contract object box sizes
     Returns:
@@ -172,25 +162,26 @@ def prepare_coco_subsets(
     for idx, (key, value) in enumerate(CLASS_MAP.items()):
         categories_coco.append({'id': value, 'name': key})
 
-    for subset_name, subset in subsets.items():
+    for subset in ['train', 'test']:
+
+        df_subset = df[df['split'] == subset]
         imgs_coco = []
         anns_coco = []
         ann_id = 0
-
-        save_img_dir = os.path.join(save_dir, subset_name, 'data')
+        save_img_dir = os.path.join(save_dir, subset, 'data')
         os.makedirs(save_img_dir, exist_ok=True)
-        for img_id, (img_path, ann_path) in tqdm(
-            enumerate(zip(subset['images'], subset['labels'])),
-            desc=f'{subset_name.capitalize()} subset processing',
+        for img_id, sample in tqdm(
+            df_subset.iterrows(),
+            desc=f'{subset.capitalize()} subset processing',
             unit=' sample',
         ):
             img_data = get_img_info(
-                img_path=img_path,
+                img_path=sample['img_path'],
                 img_id=img_id,
             )
 
             ann_data, ann_id = get_ann_info(
-                label_path=ann_path,
+                label_path=sample['ann_path'],
                 img_id=img_id,
                 ann_id=ann_id,
                 box_extension=box_extension,
@@ -200,7 +191,7 @@ def prepare_coco_subsets(
 
             img_save_path = os.path.join(save_img_dir, img_data['file_name'])
             shutil.copy(
-                src=img_path,
+                src=sample['img_path'],
                 dst=img_save_path,
             )
 
@@ -210,9 +201,18 @@ def prepare_coco_subsets(
             'categories': categories_coco,
         }
 
-        ann_save_path = os.path.join(save_dir, subset_name, 'labels.json')
+        ann_save_path = os.path.join(save_dir, subset, 'labels.json')
         with open(ann_save_path, 'w') as file:
             json.dump(dataset, file)
+
+    save_path = os.path.join(save_dir, 'metadata.xlsx')
+    df.index += 1
+    df.to_excel(
+        save_path,
+        sheet_name='Metadata',
+        index=True,
+        index_label='ID',
+    )
 
 
 @hydra.main(config_path=os.path.join(os.getcwd(), 'config'), config_name='data', version_base=None)
@@ -254,8 +254,8 @@ def main(cfg: DictConfig) -> None:
     df = add_metadata(df)
 
     # Split dataset using body part stratification
-    subsets = split_dataset(
-        df,
+    df = split_dataset(
+        df=df,
         train_size=cfg.conversion.train_size,
         seed=cfg.conversion.seed,
     )
@@ -278,7 +278,7 @@ def main(cfg: DictConfig) -> None:
     dir_name = '_'.join(names)
     save_dir = os.path.join(cfg.conversion.save_dir, dir_name)
     prepare_coco_subsets(
-        subsets=subsets,
+        df=df,
         box_extension=dict(cfg.conversion.box_extension),
         save_dir=save_dir,
     )
