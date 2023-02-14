@@ -263,11 +263,11 @@ def main(cfg: DictConfig) -> None:
     # Prepare COCO subsets
     names = []
 
-    if cfg.conversion.tsne:
-        names.append('tsne')
-
     if cfg.conversion.pca:
         names.append('pca')
+
+    if cfg.conversion.tsne:
+        names.append('tsne')
 
     if cfg.conversion.abs:
         names.append('abs')
