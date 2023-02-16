@@ -162,7 +162,8 @@ def prepare_coco_subsets(
     for idx, (key, value) in enumerate(CLASS_MAP.items()):
         categories_coco.append({'id': value, 'name': key})
 
-    for subset in ['train', 'test']:
+    subset_list = list(df['split'].unique())
+    for subset in subset_list:
 
         df_subset = df[df['split'] == subset]
         imgs_coco = []
