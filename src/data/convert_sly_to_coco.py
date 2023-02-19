@@ -222,11 +222,11 @@ def main(cfg: DictConfig) -> None:
 
     # Filter used directories
     sly_dirs = filter_sly_dirs(
-        src_dir=cfg.conversion.src_dir,
-        abs=cfg.conversion.abs,
-        ref=cfg.conversion.ref,
-        pca=cfg.conversion.pca,
-        tsne=cfg.conversion.tsne,
+        src_dir=cfg.sly_to_coco.src_dir,
+        abs=cfg.sly_to_coco.abs,
+        ref=cfg.sly_to_coco.ref,
+        pca=cfg.sly_to_coco.pca,
+        tsne=cfg.sly_to_coco.tsne,
     )
 
     # Get list of images and annotations
@@ -257,30 +257,30 @@ def main(cfg: DictConfig) -> None:
     # Split dataset using body part stratification
     df = split_dataset(
         df=df,
-        train_size=cfg.conversion.train_size,
-        seed=cfg.conversion.seed,
+        train_size=cfg.sly_to_coco.train_size,
+        seed=cfg.sly_to_coco.seed,
     )
 
     # Prepare COCO subsets
     names = []
 
-    if cfg.conversion.pca:
+    if cfg.sly_to_coco.pca:
         names.append('pca')
 
-    if cfg.conversion.tsne:
+    if cfg.sly_to_coco.tsne:
         names.append('tsne')
 
-    if cfg.conversion.abs:
+    if cfg.sly_to_coco.abs:
         names.append('abs')
 
-    if cfg.conversion.ref:
+    if cfg.sly_to_coco.ref:
         names.append('ref')
 
     dir_name = '_'.join(names)
-    save_dir = os.path.join(cfg.conversion.save_dir, dir_name)
+    save_dir = os.path.join(cfg.sly_to_coco.save_dir, dir_name)
     prepare_coco_subsets(
         df=df,
-        box_extension=dict(cfg.conversion.box_extension),
+        box_extension=dict(cfg.sly_to_coco.box_extension),
         save_dir=save_dir,
     )
 

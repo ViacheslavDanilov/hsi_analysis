@@ -2,7 +2,7 @@ defaults:
 - main
 - _self_
 
-conversion:
+sly_to_coco:
   src_dir: data/sly_output
   include_dirs: []
   exclude_dirs: []
