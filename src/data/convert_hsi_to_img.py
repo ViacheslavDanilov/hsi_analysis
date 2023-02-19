@@ -234,12 +234,7 @@ if __name__ == '__main__':
     parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
     parser.add_argument('--modality', default='abs', type=str, choices=['abs', 'ref'])
-    parser.add_argument(
-        '--color_map',
-        default=None,
-        type=str,
-        choices=['jet', 'bone', 'ocean', 'cool', 'hsv'],
-    )
+    parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
     parser.add_argument('--apply_equalization', action='store_true')
     parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
     parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
