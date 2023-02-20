@@ -1,0 +1,14 @@
+defaults:
+- main
+- _self_
+
+src_dir: data/raw
+modality: abs                       # abs or ref
+include_dirs: []
+exclude_dirs: []
+color_map:                          # jet, bone, ocean, cool, hsv
+apply_equalization: false
+output_type: image                  # image or video
+output_size: [744, 1000]
+fps: 15
+save_dir: data/raw_converted_temp
