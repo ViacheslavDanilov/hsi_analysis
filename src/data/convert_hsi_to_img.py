@@ -1,16 +1,17 @@
-import argparse
 import logging
 import os
 from functools import partial
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple
 
 import cv2
 import ffmpeg
+import hydra
 import imutils
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
+from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from src.data.utils import (
@@ -25,15 +26,8 @@ from src.data.utils import (
     read_hsi,
 )
 
-os.makedirs('logs', exist_ok=True)
-logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%d.%m.%Y %H:%M:%S',
-    filename='logs/{:s}.log'.format(Path(__file__).stem),
-    filemode='w',
-    level=logging.INFO,
-)
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 def process_hsi(
@@ -147,42 +141,42 @@ def process_hsi(
         ffmpeg.run(stream, quiet=True, overwrite_output=True)
         os.remove(video_path_temp)
 
-    logger.info(f'HSI processed......: {hsi_path}')
+    log.info(f'HSI processed......: {hsi_path}')
 
     return metadata
 
 
-def main(
-    input_dir: str,
-    save_dir: str,
-    modality: str = 'abs',
-    color_map: Optional[str] = None,
-    apply_equalization: bool = False,
-    output_type: str = 'image',
-    output_size: Tuple[int, int] = (744, 1000),
-    fps: int = 15,
-    include_dirs: Optional[Union[List[str], str]] = None,
-    exclude_dirs: Optional[Union[List[str], str]] = None,
-) -> None:
+@hydra.main(
+    config_path=os.path.join(os.getcwd(), 'config'),
+    config_name='hsi_to_img',
+    version_base=None,
+)
+def main(cfg: DictConfig) -> None:
+    log.info(f'Config:\n\n{OmegaConf.to_yaml(cfg)}')
+
+    if cfg.color_map is not None:
+        save_dir = os.path.join(cfg.save_dir, cfg.color_map)
+    else:
+        save_dir = os.path.join(cfg.save_dir, cfg.modality)
 
     # Log main parameters
-    logger.info(f'Input dir..........: {input_dir}')
-    logger.info(f'Included dirs......: {include_dirs}')
-    logger.info(f'Excluded dirs......: {exclude_dirs}')
-    logger.info(f'Output dir.........: {save_dir}')
-    logger.info(f'Modality...........: {modality}')
-    logger.info(f'Color map..........: {color_map}')
-    logger.info(f'Apply equalization.: {apply_equalization}')
-    logger.info(f'Output type........: {output_type}')
-    logger.info(f'Output size........: {output_size}')
-    logger.info(f'FPS................: {fps if output_type == "video" else None}')
-    logger.info('')
+    log.info(f'Input dir..........: {cfg.src_dir}')
+    log.info(f'Included dirs......: {cfg.include_dirs}')
+    log.info(f'Excluded dirs......: {cfg.exclude_dirs}')
+    log.info(f'Output dir.........: {save_dir}')
+    log.info(f'Modality...........: {cfg.modality}')
+    log.info(f'Color map..........: {cfg.color_map}')
+    log.info(f'Apply equalization.: {cfg.apply_equalization}')
+    log.info(f'Output type........: {cfg.output_type}')
+    log.info(f'Output size........: {cfg.output_size}')
+    log.info(f'FPS................: {cfg.fps if cfg.output_type == "video" else None}')
+    log.info('')
 
     # Filter the list of studied directories
     study_dirs = get_dir_list(
-        data_dir=input_dir,
-        include_dirs=include_dirs,
-        exclude_dirs=exclude_dirs,
+        data_dir=cfg.src_dir,
+        include_dirs=cfg.include_dirs,
+        exclude_dirs=cfg.exclude_dirs,
     )
 
     # Get list of HSI files
@@ -191,18 +185,18 @@ def main(
         include_template='',
         ext_list='.dat',
     )
-    logger.info(f'HSI found..........: {len(hsi_paths)}')
+    log.info(f'HSI found..........: {len(hsi_paths)}')
 
     # Multiprocessing of HSI files
     os.makedirs(save_dir, exist_ok=True)
     processing_func = partial(
         process_hsi,
-        modality=modality,
-        color_map=color_map,
-        apply_equalization=apply_equalization,
-        output_type=output_type,
-        output_size=output_size,
-        fps=fps,
+        modality=cfg.modality,
+        color_map=cfg.color_map,
+        apply_equalization=cfg.apply_equalization,
+        output_type=cfg.output_type,
+        output_size=tuple(cfg.output_size),
+        fps=cfg.fps,
         save_dir=save_dir,
     )
     result = Parallel(n_jobs=-1, prefer='threads')(
@@ -223,39 +217,9 @@ def main(
         index=True,
         index_label='ID',
     )
-    logger.info('')
-    logger.info(f'Complete')
+    log.info('')
+    log.info(f'Complete')
 
 
 if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Convert Hyperspectral Images')
-    parser.add_argument('--input_dir', default='dataset/HSI', type=str)
-    parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--modality', default='abs', type=str, choices=['abs', 'ref'])
-    parser.add_argument('--color_map', default=None, type=str, choices=['jet', 'bone', 'ocean', 'cool', 'hsv'])
-    parser.add_argument('--apply_equalization', action='store_true')
-    parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
-    parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
-    parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', default='dataset/HSI_processed', type=str)
-    args = parser.parse_args()
-
-    if args.color_map is not None:
-        args.save_dir = os.path.join(args.save_dir, args.color_map)
-    else:
-        args.save_dir = os.path.join(args.save_dir, args.modality)
-
-    main(
-        input_dir=args.input_dir,
-        include_dirs=args.include_dirs,
-        exclude_dirs=args.exclude_dirs,
-        modality=args.modality,
-        color_map=args.color_map,
-        apply_equalization=args.apply_equalization,
-        output_type=args.output_type,
-        output_size=tuple(args.output_size),
-        fps=args.fps,
-        save_dir=args.save_dir,
-    )
+    main()
