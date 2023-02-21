@@ -7,7 +7,7 @@ modality: abs                       # abs or ref
 include_dirs: []
 exclude_dirs: []
 color_map:                          # jet, bone, ocean, cool, hsv
-apply_equalization: false
+apply_equalization: true
 output_type: image                  # image or video
 output_size: [744, 1000]
 fps: 15
