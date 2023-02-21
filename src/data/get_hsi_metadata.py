@@ -1,23 +1,16 @@
-import argparse
-
+import hydra
 import pandas as pd
+from omegaconf import DictConfig, OmegaConf
 from tqdm.contrib.concurrent import process_map
 
 from src.data.utils import *
 
-os.makedirs('logs', exist_ok=True)
-logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%d.%m.%Y %H:%M:%S',
-    filename='logs/{:s}.log'.format(Path(__file__).stem),
-    filemode='w',
-    level=logging.INFO,
-)
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 def process_hsi(
-        hsi_path: str,
+    hsi_path: str,
 ) -> dict:
 
     hsi = read_hsi(hsi_path)
@@ -38,33 +31,35 @@ def process_hsi(
         'Height': hsi.shape[0],
         'Width': hsi.shape[1],
         'Depth': hsi.shape[2],
-        'Size': os.path.getsize(hsi_path) / (10 ** 6),
+        'Size': os.path.getsize(hsi_path) / (10**6),
         'Temperature ID': temperature_idx,
         'Temperature': temperature,
     }
-    logger.info(f'Metadata extracted.: {hsi_path}')
+    log.info(f'Metadata extracted.: {hsi_path}')
 
     return metadata
 
 
-def main(
-        input_dir: str,
-        save_dir: str,
-        include_dirs: Optional[Union[List[str], str]] = None,
-        exclude_dirs: Optional[Union[List[str], str]] = None,
-):
+@hydra.main(
+    config_path=os.path.join(os.getcwd(), 'config'),
+    config_name='get_hsi_metadata',
+    version_base=None,
+)
+def main(cfg: DictConfig) -> None:
+    log.info(f'Config:\n\n{OmegaConf.to_yaml(cfg)}')
+
     # Log main parameters
-    logger.info(f'Input dir..........: {input_dir}')
-    logger.info(f'Included dirs......: {include_dirs}')
-    logger.info(f'Excluded dirs......: {exclude_dirs}')
-    logger.info(f'Output dir.........: {save_dir}')
-    logger.info('')
+    log.info(f'Input dir..........: {cfg.src_dir}')
+    log.info(f'Included dirs......: {cfg.include_dirs}')
+    log.info(f'Excluded dirs......: {cfg.exclude_dirs}')
+    log.info(f'Output dir.........: {cfg.save_dir}')
+    log.info('')
 
     # Filter the list of studied directories
     study_dirs = get_dir_list(
-        data_dir=input_dir,
-        include_dirs=include_dirs,
-        exclude_dirs=exclude_dirs,
+        data_dir=cfg.src_dir,
+        include_dirs=cfg.include_dirs,
+        exclude_dirs=cfg.exclude_dirs,
     )
 
     # Get list of HSI files
@@ -73,7 +68,7 @@ def main(
         include_template='',
         ext_list='.dat',
     )
-    logger.info(f'HSI found..........: {len(hsi_paths)}')
+    log.info(f'HSI found..........: {len(hsi_paths)}')
 
     # Multiprocessing of all HSIs
     num_cores = multiprocessing.cpu_count()
@@ -85,8 +80,8 @@ def main(
 
     # Save metadata as an XLSX file
     df = pd.DataFrame(metadata)
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, 'HSI metadata.xlsx')
+    os.makedirs(cfg.save_dir, exist_ok=True)
+    save_path = os.path.join(cfg.save_dir, 'metadata.xlsx')
     df.index += 1
     df.to_excel(
         save_path,
@@ -95,22 +90,9 @@ def main(
         index_label='ID',
     )
 
-    logger.info('')
-    logger.info(f'Complete')
+    log.info('')
+    log.info(f'Complete')
 
 
 if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Data processing')
-    parser.add_argument('--input_dir', default='dataset/HSI', type=str)
-    parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--save_dir', default='dataset', type=str)
-    args = parser.parse_args()
-
-    main(
-        input_dir=args.input_dir,
-        include_dirs=args.include_dirs,
-        exclude_dirs=args.exclude_dirs,
-        save_dir=args.save_dir,
-    )
+    main()
