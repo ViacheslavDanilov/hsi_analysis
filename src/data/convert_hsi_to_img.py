@@ -2,7 +2,7 @@ import logging
 import os
 from functools import partial
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import cv2
 import ffmpeg
@@ -203,7 +203,7 @@ def main(cfg: DictConfig) -> None:
         delayed(processing_func)(group)
         for group in tqdm(hsi_paths, desc='Process hyperspectral images', unit=' HSI')
     )
-    metadata = sum(result, [])
+    metadata: List[Dict] = sum(result, [])
 
     # Save metadata as an XLSX file
     df = pd.DataFrame(metadata)
