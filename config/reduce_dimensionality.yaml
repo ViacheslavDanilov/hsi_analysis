@@ -1,0 +1,14 @@
+defaults:
+- main
+- _self_
+
+src_dir: data/raw
+include_dirs: []
+exclude_dirs: []
+reduction_method: pca               # pca or tsne
+num_components: 3
+modality: abs                       # abs and ref
+color_map:                          # jet, bone, ocean, cool, hsv
+apply_equalization: true
+output_size: [744, 1000]
+save_dir: data/sly_input

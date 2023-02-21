@@ -1,16 +1,17 @@
-import argparse
 import logging
 import os
 import pickle
 from functools import partial
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import cv2
+import hydra
 import imutils
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
+from omegaconf import DictConfig, OmegaConf
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
@@ -28,15 +29,8 @@ from src.data.utils import (
     read_hsi,
 )
 
-os.makedirs('../logs', exist_ok=True)
-logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%d.%m.%Y %H:%M:%S',
-    filename='logs/{:s}.log'.format(Path(__file__).stem),
-    filemode='w',
-    level=logging.INFO,
-)
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 def reduce_dimensionality(
@@ -105,7 +99,7 @@ def process_hsi(
     if Path(pickle_path).exists():
         with open(pickle_path, 'rb') as f:
             hsi_reduced, var_ratio = pickle.load(f)
-            logger.info(f'Load reduced HSI: {pickle_path}')
+            log.info(f'Load reduced HSI: {pickle_path}')
             f.close()
     elif not Path(pickle_path).exists():
         hsi_reduced, var_ratio = reduce_dimensionality(
@@ -115,7 +109,7 @@ def process_hsi(
         )
         with open(pickle_path, 'wb') as f:
             pickle.dump([hsi_reduced, var_ratio], f)
-            logger.info(f'Save reduced HSI: {pickle_path}')
+            log.info(f'Save reduced HSI: {pickle_path}')
             f.close()
     else:
         raise ValueError('Unexpected error appeared during reduction')
@@ -178,37 +172,37 @@ def process_hsi(
     return metadata
 
 
-def main(
-    input_dir: str,
-    save_dir: str,
-    num_components: int = 3,
-    reduction_method: str = 'PCA',
-    modality: str = 'absorbance',
-    color_map: Optional[str] = None,
-    apply_equalization: bool = False,
-    output_size: Tuple[int, int] = (744, 1000),
-    include_dirs: Optional[Union[List[str], str]] = None,
-    exclude_dirs: Optional[Union[List[str], str]] = None,
-) -> None:
+@hydra.main(
+    config_path=os.path.join(os.getcwd(), 'config'),
+    config_name='reduce_dimensionality',
+    version_base=None,
+)
+def main(cfg: DictConfig) -> None:
+    log.info(f'Config:\n\n{OmegaConf.to_yaml(cfg)}')
+
+    if cfg.color_map is not None:
+        save_dir = os.path.join(cfg.save_dir, cfg.reduction_method, cfg.color_map)
+    else:
+        save_dir = os.path.join(cfg.save_dir, cfg.reduction_method, cfg.modality)
 
     # Log main parameters
-    logger.info(f'Input dir..........: {input_dir}')
-    logger.info(f'Included dirs......: {include_dirs}')
-    logger.info(f'Excluded dirs......: {exclude_dirs}')
-    logger.info(f'Components.........: {num_components}')
-    logger.info(f'Reduction method...: {reduction_method}')
-    logger.info(f'Modality...........: {modality}')
-    logger.info(f'Color map..........: {color_map}')
-    logger.info(f'Apply equalization.: {apply_equalization}')
-    logger.info(f'Output size........: {output_size}')
-    logger.info(f'Output dir.........: {save_dir}')
-    logger.info('')
+    log.info(f'Input dir..........: {cfg.src_dir}')
+    log.info(f'Included dirs......: {cfg.include_dirs}')
+    log.info(f'Excluded dirs......: {cfg.exclude_dirs}')
+    log.info(f'Components.........: {cfg.num_components}')
+    log.info(f'Reduction method...: {cfg.reduction_method}')
+    log.info(f'Modality...........: {cfg.modality}')
+    log.info(f'Color map..........: {cfg.color_map}')
+    log.info(f'Apply equalization.: {cfg.apply_equalization}')
+    log.info(f'Output size........: {cfg.output_size}')
+    log.info(f'Output dir.........: {save_dir}')
+    log.info('')
 
     # Filter the list of studied directories
     study_dirs = get_dir_list(
-        data_dir=input_dir,
-        include_dirs=include_dirs,
-        exclude_dirs=exclude_dirs,
+        data_dir=cfg.src_dir,
+        include_dirs=cfg.include_dirs,
+        exclude_dirs=cfg.exclude_dirs,
     )
 
     # Get list of HSI files
@@ -217,25 +211,25 @@ def main(
         include_template='',
         ext_list='.dat',
     )
-    logger.info(f'HSI found..........: {len(hsi_paths)}')
+    log.info(f'HSI found..........: {len(hsi_paths)}')
 
     # Multiprocessing of HSI files
     os.makedirs(save_dir, exist_ok=True)
     processing_func = partial(
         process_hsi,
-        num_components=num_components,
-        reduction_method=reduction_method,
-        modality=modality,
-        color_map=color_map,
-        apply_equalization=apply_equalization,
-        output_size=output_size,
+        num_components=cfg.num_components,
+        reduction_method=cfg.reduction_method,
+        modality=cfg.modality,
+        color_map=cfg.color_map,
+        apply_equalization=cfg.apply_equalization,
+        output_size=cfg.output_size,
         save_dir=save_dir,
     )
     result = Parallel(n_jobs=-1, prefer='threads')(
         delayed(processing_func)(group)
         for group in tqdm(hsi_paths, desc='Reduce hyperspectral images', unit='HSI')
     )
-    metadata = sum(result, [])
+    metadata: List[Dict] = sum(result, [])
 
     # Save metadata as an XLSX file
     df = pd.DataFrame(metadata)
@@ -249,44 +243,9 @@ def main(
         index=True,
         index_label='ID',
     )
-    logger.info('')
-    logger.info(f'Complete')
+    log.info('')
+    log.info(f'Complete')
 
 
 if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Reduce dimensionality of HSI cubes')
-    parser.add_argument('--input_dir', default='data/raw', type=str)
-    parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--num_components', default=3, type=int)
-    parser.add_argument('--reduction_method', default='pca', type=str, choices=['pca', 'tsne'])
-    parser.add_argument('--modality', default='abs', type=str, choices=['abs', 'ref'])
-    parser.add_argument(
-        '--color_map',
-        default=None,
-        type=str,
-        choices=['jet', 'bone', 'ocean', 'cool', 'hsv'],
-    )
-    parser.add_argument('--apply_equalization', action='store_true')
-    parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
-    parser.add_argument('--save_dir', default='data/sly_input', type=str)
-    args = parser.parse_args()
-
-    if args.color_map is not None:
-        args.save_dir = os.path.join(args.save_dir, args.reduction_method, args.color_map)
-    else:
-        args.save_dir = os.path.join(args.save_dir, args.reduction_method, args.modality)
-
-    main(
-        input_dir=args.input_dir,
-        include_dirs=args.include_dirs,
-        exclude_dirs=args.exclude_dirs,
-        reduction_method=args.reduction_method,
-        modality=args.modality,
-        num_components=args.num_components,
-        color_map=args.color_map,
-        apply_equalization=args.apply_equalization,
-        output_size=tuple(args.output_size),
-        save_dir=args.save_dir,
-    )
+    main()
