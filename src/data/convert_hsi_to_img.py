@@ -148,7 +148,7 @@ def process_hsi(
 
 @hydra.main(
     config_path=os.path.join(os.getcwd(), 'config'),
-    config_name='hsi_to_img',
+    config_name='convert_hsi_to_img',
     version_base=None,
 )
 def main(cfg: DictConfig) -> None:

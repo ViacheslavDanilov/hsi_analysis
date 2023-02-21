@@ -11,4 +11,4 @@ apply_equalization: false
 output_type: image                  # image or video
 output_size: [744, 1000]
 fps: 15
-save_dir: data/raw_converted_temp
+save_dir: data/raw_converted
