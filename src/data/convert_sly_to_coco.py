@@ -216,17 +216,21 @@ def prepare_coco_subsets(
     )
 
 
-@hydra.main(config_path=os.path.join(os.getcwd(), 'config'), config_name='data', version_base=None)
+@hydra.main(
+    config_path=os.path.join(os.getcwd(), 'config'),
+    config_name='convert_sly_to_coco',
+    version_base=None,
+)
 def main(cfg: DictConfig) -> None:
     log.info(f'Config:\n\n{OmegaConf.to_yaml(cfg)}')
 
     # Filter used directories
     sly_dirs = filter_sly_dirs(
-        src_dir=cfg.conversion.src_dir,
-        abs=cfg.conversion.abs,
-        ref=cfg.conversion.ref,
-        pca=cfg.conversion.pca,
-        tsne=cfg.conversion.tsne,
+        src_dir=cfg.src_dir,
+        abs=cfg.abs,
+        ref=cfg.ref,
+        pca=cfg.pca,
+        tsne=cfg.tsne,
     )
 
     # Get list of images and annotations
@@ -257,30 +261,30 @@ def main(cfg: DictConfig) -> None:
     # Split dataset using body part stratification
     df = split_dataset(
         df=df,
-        train_size=cfg.conversion.train_size,
-        seed=cfg.conversion.seed,
+        train_size=cfg.train_size,
+        seed=cfg.seed,
     )
 
     # Prepare COCO subsets
     names = []
 
-    if cfg.conversion.pca:
+    if cfg.pca:
         names.append('pca')
 
-    if cfg.conversion.tsne:
+    if cfg.tsne:
         names.append('tsne')
 
-    if cfg.conversion.abs:
+    if cfg.abs:
         names.append('abs')
 
-    if cfg.conversion.ref:
+    if cfg.ref:
         names.append('ref')
 
     dir_name = '_'.join(names)
-    save_dir = os.path.join(cfg.conversion.save_dir, dir_name)
+    save_dir = os.path.join(cfg.save_dir, dir_name)
     prepare_coco_subsets(
         df=df,
-        box_extension=dict(cfg.conversion.box_extension),
+        box_extension=dict(cfg.box_extension),
         save_dir=save_dir,
     )
 

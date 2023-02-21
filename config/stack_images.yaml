@@ -1,0 +1,11 @@
+defaults:
+- main
+- _self_
+
+src_dirs: [data/raw_converted/abs, data/raw_converted/hsv, data/raw_converted/ref]
+include_dirs: []
+exclude_dirs: []
+output_type: image                  # image or video
+output_size: [744, 1000]
+fps: 15
+save_dir: data/stack

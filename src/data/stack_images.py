@@ -1,39 +1,28 @@
-import os
 import logging
-import argparse
-from pathlib import Path
+import os
 from functools import partial
-from joblib import Parallel, delayed
-from typing import List, Tuple, Union, Optional
+from pathlib import Path
+from typing import Tuple
 
 import cv2
 import ffmpeg
+import hydra
 import imutils
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
+from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
-from src.data.utils import (
-    get_file_list,
-    get_dir_list,
-    extract_study_name,
-    extract_series_name,
-)
+from src.data.utils import extract_series_name, extract_study_name, get_dir_list, get_file_list
 
-os.makedirs('logs', exist_ok=True)
-logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%d.%m.%Y %H:%M:%S',
-    filename='logs/{:s}.log'.format(Path(__file__).stem),
-    filemode='w',
-    level=logging.INFO,
-)
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 def stack_images(
-        img_paths: Tuple[str, ...],
-        output_size: Tuple[int, int] = (744, 1000),
+    img_paths: Tuple[str, ...],
+    output_size: Tuple[int, int] = (744, 1000),
 ) -> np.ndarray:
 
     # Read images and stack them together
@@ -53,11 +42,11 @@ def stack_images(
 
 
 def process_group(
-        series_group: tuple,
-        save_dir: str,
-        output_type: str = 'image',
-        output_size: Tuple[int, int] = (744, 1000),
-        fps: int = 15,
+    series_group: tuple,
+    save_dir: str,
+    output_type: str = 'image',
+    output_size: Tuple[int, int] = (744, 1000),
+    fps: int = 15,
 ) -> None:
 
     (study_name, series_name), df = series_group
@@ -71,7 +60,7 @@ def process_group(
     if output_type == 'video':
         video_path_temp = os.path.join(output_dir, f'{series_name}_temp.mp4')
         num_studies = len(df['dir_id'].unique())
-        video_height, video_width = output_size[0], num_studies*output_size[1]
+        video_height, video_width = output_size[0], num_studies * output_size[1]
         video = cv2.VideoWriter(
             video_path_temp,
             cv2.VideoWriter_fourcc(*'mp4v'),
@@ -109,20 +98,19 @@ def process_group(
         os.remove(video_path_temp)
 
 
-def main(
-        input_dirs: List[str],
-        save_dir: str,
-        output_type: str = 'image',
-        output_size: Tuple[int, int] = (744, 1000),
-        fps: int = 15,
-        include_dirs: Optional[Union[List[str], str]] = None,
-        exclude_dirs: Optional[Union[List[str], str]] = None,
-) -> None:
+@hydra.main(
+    config_path=os.path.join(os.getcwd(), 'config'),
+    config_name='stack_images',
+    version_base=None,
+)
+def main(cfg: DictConfig) -> None:
+    log.info(f'Config:\n\n{OmegaConf.to_yaml(cfg)}')
+
     """
     Stack images from multiple directories into one image
 
     Args:
-        input_dirs: list of dirs with source images
+        src_dirs: list of dirs with source images
         save_dir: directory where arranged images are saved
         output_type: whether to save it as a video or image
         output_size: new size of images (the algorithm keeps the aspect ratio)
@@ -134,12 +122,12 @@ def main(
 
     # Collect images across all dirs
     img_dirs = []
-    for input_dir in input_dirs:
+    for src_dir in cfg.src_dirs:
 
         study_dirs = get_dir_list(
-            data_dir=input_dir,
-            include_dirs=include_dirs,
-            exclude_dirs=exclude_dirs,
+            data_dir=src_dir,
+            include_dirs=cfg.include_dirs,
+            exclude_dirs=cfg.exclude_dirs,
         )
 
         _img_paths = get_file_list(
@@ -170,34 +158,16 @@ def main(
     gb = df.groupby(['study', 'series'])
     processing_func = partial(
         process_group,
-        output_type=output_type,
-        output_size=output_size,
-        fps=fps,
-        save_dir=save_dir,
+        output_type=cfg.output_type,
+        output_size=cfg.output_size,
+        fps=cfg.fps,
+        save_dir=cfg.save_dir,
     )
     Parallel(n_jobs=-1, prefer='threads')(
-        delayed(processing_func)(group) for group in tqdm(gb, desc='Stacking images', unit=' groups')
+        delayed(processing_func)(group)
+        for group in tqdm(gb, desc='Stacking images', unit=' groups')
     )
 
 
 if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Stack images')
-    parser.add_argument('--input_dirs', nargs='+', required=True, type=str)
-    parser.add_argument('--include_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--exclude_dirs', nargs='+', default=None, type=str)
-    parser.add_argument('--output_type', default='image', type=str, choices=['image', 'video'])
-    parser.add_argument('--output_size', default=[744, 1000], nargs='+', type=int)
-    parser.add_argument('--fps', default=15, type=int)
-    parser.add_argument('--save_dir', default='dataset/HSI_processed/stack', type=str)
-    args = parser.parse_args()
-
-    main(
-        input_dirs=args.input_dirs,
-        include_dirs=args.include_dirs,
-        exclude_dirs=args.exclude_dirs,
-        output_type=args.output_type,
-        output_size=args.output_size,
-        fps=args.fps,
-        save_dir=args.save_dir,
-    )
+    main()

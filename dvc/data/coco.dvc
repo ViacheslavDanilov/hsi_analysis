@@ -1,0 +1,5 @@
+wdir: ../../data
+outs:
+- md5: 488b460a113ba22a468791624e2d0e65
+  size: 10467834187
+  path: coco.zip
