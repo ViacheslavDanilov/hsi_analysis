@@ -218,7 +218,7 @@ def prepare_coco_subsets(
 
 @hydra.main(
     config_path=os.path.join(os.getcwd(), 'config'),
-    config_name='sly_to_coco',
+    config_name='convert_sly_to_coco',
     version_base=None,
 )
 def main(cfg: DictConfig) -> None:
