@@ -173,15 +173,7 @@ def main():
 
     # ------------------------------------------------- CUSTOM CONFIG --------------------------------------------------
     CLASSES = (
-        'Cephalization',
-        'Heart',
-        'Artery',
-        'Bronchus',
-        'Kerley',
-        'Cuffing',
-        'Effusion',
-        'Bat',
-        'Infiltrate',
+        'Ablation',
     )
     cfg.classes = CLASSES
     cfg.dataset_type = args.dataset_type
