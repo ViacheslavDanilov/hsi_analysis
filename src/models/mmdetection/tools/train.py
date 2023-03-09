@@ -38,7 +38,7 @@ def parse_args():
     parser.add_argument(
         '--data-dir',
         type=str,
-        default='data/coco',
+        default='data/coco/pca_abs',
         help='directory to the COCO dataset',
     )
     parser.add_argument(
@@ -59,11 +59,11 @@ def parse_args():
         default=None,
         help='workers to pre-fetch data for each single GPU',
     )
-    parser.add_argument('--epochs', default=2, type=int, help='number of training epochs')
+    parser.add_argument('--epochs', default=1, type=int, help='number of training epochs')
     parser.add_argument('--seed', type=int, default=11, help='seed value for reproducible results')
     parser.add_argument(
         '--work-dir',
-        default='models/sign_detection',
+        default='models/ablation_detection',
         help='the dir to save logs and models',
     )
     parser.add_argument(
@@ -373,7 +373,7 @@ def main():
     ]
     if ml_flow_logger_item:
         ml_flow_logger = ml_flow_logger_item[0]
-        ml_flow_logger['exp_name'] = 'Edema'
+        ml_flow_logger['exp_name'] = 'HSI'
         ml_flow_logger['params'] = dict(
             cfg=cfg.filename,
             device=cfg.device,
