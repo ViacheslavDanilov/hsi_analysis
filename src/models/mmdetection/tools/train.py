@@ -5,6 +5,7 @@ import os.path as osp
 import time
 import warnings
 
+import mlflow
 import mmcv
 import torch
 import torch.distributed as dist
@@ -172,9 +173,7 @@ def main():
         cfg.merge_from_dict(args.cfg_options)
 
     # ------------------------------------------------- CUSTOM CONFIG --------------------------------------------------
-    CLASSES = (
-        'Ablation',
-    )
+    CLASSES = ('Ablation',)
     cfg.classes = CLASSES
     cfg.dataset_type = args.dataset_type
     cfg.data_root = args.data_dir
@@ -298,7 +297,7 @@ def main():
     # dump config
     cfg.dump(osp.join(cfg.work_dir, osp.basename(args.config)))
     # init the logger before other steps
-    timestamp = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+    timestamp = time.strftime('%H%M%S_%d%m%y', time.localtime())
     log_file = osp.join(cfg.work_dir, f'{timestamp}.log')
     logger = get_root_logger(log_file=log_file, log_level=cfg.log_level)
 
@@ -363,6 +362,8 @@ def main():
     ml_flow_logger_item = [
         logger for logger in cfg.log_config.hooks if 'MlflowLoggerHook' in logger['type']
     ]
+    run_name = f'{cfg.model.type}_{timestamp}'
+    mlflow.set_tag('mlflow.runName', run_name)
     if ml_flow_logger_item:
         ml_flow_logger = ml_flow_logger_item[0]
         ml_flow_logger['exp_name'] = 'HSI'
