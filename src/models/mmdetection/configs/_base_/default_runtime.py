@@ -6,7 +6,7 @@ log_config = dict(
         dict(type='TextLoggerHook'),
         dict(
             type='MlflowLoggerHook',
-            exp_name='HSI',
+            exp_name='Default',
             log_model=True,
             interval=1,
             params={},
