@@ -251,9 +251,10 @@ def main():
         torch.backends.cudnn.benchmark = True
 
     # work_dir is determined in this priority: CLI > segment in file > filename
+    timestamp = time.strftime('%H%M%S_%d%m%y', time.localtime())
     if args.work_dir is not None:
         # update configs according to CLI args if args.work_dir is not None
-        cfg.work_dir = osp.join(args.work_dir, osp.splitext(osp.basename(args.config))[0])
+        cfg.work_dir = osp.join(args.work_dir, f'{cfg.model.type}_{timestamp}')
     elif cfg.get('work_dir', None) is None:
         # use config filename as default work_dir if cfg.work_dir is None
         cfg.work_dir = osp.join(
@@ -297,7 +298,6 @@ def main():
     # dump config
     cfg.dump(osp.join(cfg.work_dir, osp.basename(args.config)))
     # init the logger before other steps
-    timestamp = time.strftime('%H%M%S_%d%m%y', time.localtime())
     log_file = osp.join(cfg.work_dir, f'{timestamp}.log')
     logger = get_root_logger(log_file=log_file, log_level=cfg.log_level)
 
