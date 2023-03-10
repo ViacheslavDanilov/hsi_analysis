@@ -363,10 +363,10 @@ def main():
         logger for logger in cfg.log_config.hooks if 'MlflowLoggerHook' in logger['type']
     ]
     run_name = f'{cfg.model.type}_{timestamp}'
-    mlflow.set_tag('mlflow.runName', run_name)
     if ml_flow_logger_item:
         ml_flow_logger = ml_flow_logger_item[0]
         ml_flow_logger['exp_name'] = 'HSI'
+        mlflow.set_tag('mlflow.runName', run_name)
         ml_flow_logger['params'] = dict(
             cfg=cfg.filename,
             device=cfg.device,
