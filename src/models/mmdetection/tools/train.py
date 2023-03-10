@@ -4,6 +4,7 @@ import os
 import os.path as osp
 import time
 import warnings
+from pathlib import Path
 
 import mlflow
 import mmcv
@@ -362,21 +363,22 @@ def main():
     ml_flow_logger_item = [
         logger for logger in cfg.log_config.hooks if 'MlflowLoggerHook' in logger['type']
     ]
-    run_name = f'{cfg.model.type}_{timestamp}'
     if ml_flow_logger_item:
         ml_flow_logger = ml_flow_logger_item[0]
-        ml_flow_logger['exp_name'] = 'HSI'
+        mlflow.set_experiment('HSI')
+        run_name = f'{cfg.model.type}_{timestamp}'
         mlflow.set_tag('mlflow.runName', run_name)
         ml_flow_logger['params'] = dict(
-            cfg=cfg.filename,
-            device=cfg.device,
-            seed=cfg.seed,
+            dataset_name=Path(args.data_dir).name,
+            dataset_size=len(datasets[0].data_infos),
+            model=cfg.model.type,
+            backbone=cfg.model.backbone.type,
+            img_size=cfg.data.train.pipeline[2].img_scale,
+            batch_size=cfg.data.samples_per_gpu,
             epochs=args.epochs,
-            model_type=cfg.model.type,
-            model_backbone_type=cfg.model.backbone.type,
-            data_pipeline_img_input_shape=cfg.data.train.pipeline[2].img_scale,
-            data_pipeline_train_img_count=len(datasets[0].data_infos),
-            base_batch_size=cfg.data.samples_per_gpu,
+            seed=cfg.seed,
+            device=cfg.device,
+            cfg=cfg.filename,
         )
 
         # Compute complexity
@@ -397,12 +399,12 @@ def main():
 
             input_shape = (3, *cfg.data.train.pipeline[2].img_scale)
             flops, params = get_model_complexity_info(tmp_model, input_shape)
-            ml_flow_logger['params']['flops_count'] = flops
-            ml_flow_logger['params']['params_count'] = params
+            ml_flow_logger['params']['flops'] = flops
+            ml_flow_logger['params']['params'] = params
         except Exception as err:
             print(f'Error: {err}')
-            ml_flow_logger['params']['flops_count'] = 'NA'
-            ml_flow_logger['params']['params_count'] = 'NA'
+            ml_flow_logger['params']['flops'] = 'NA'
+            ml_flow_logger['params']['params'] = 'NA'
 
     train_detector(
         model,
