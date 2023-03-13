@@ -1,5 +1,7 @@
 import logging
+from typing import List
 
+import pandas as pd
 import torch
 from cpuinfo import get_cpu_info
 from mmdet.apis import inference_detector, init_detector
@@ -61,11 +63,14 @@ class AblationDetector:
             logging.info(f'CPU.........: {info["brand_raw"]}')
 
     # TODO: add method for forecasting
-    def predict(self):
-        inference_detector(self.model, 'demo/demo.jpg')
+    def predict(
+        self,
+        img_paths: List[str],
+    ) -> pd.DataFrame:
+        # output -> array(x_min, y_min, x_max, y_max, confidence)
+        detections = inference_detector(
+            model=self.model,
+            imgs=img_paths,
+        )
 
-
-if __name__ == '__main__':
-    a = AblationDetector('models/ablation_detection/FasterRCNN_004130_110323')
-    a.predict()
-    print('Complete')
+        return detections  # FIXME: change type
