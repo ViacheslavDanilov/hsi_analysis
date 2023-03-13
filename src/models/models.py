@@ -13,6 +13,8 @@ class AblationDetector:
     def __init__(
         self,
         model_dir: str,
+        conf_threshold: float = 0.5,  # TODO: implement usage of this parameter
+        iou_threshold: float = 0.3,  # TODO: implement usage of this parameter
         device: str = 'auto',
     ):
 
