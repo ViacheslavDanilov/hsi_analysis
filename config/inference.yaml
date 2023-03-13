@@ -1,0 +1,10 @@
+defaults:
+- main
+- _self_
+
+data_dir: data/sly_input/pca/ref/30_08_2019_test_01_liver
+model_dir: models/ablation_detection/FasterRCNN_221950_100323
+conf_threshold: 0.5
+iou_threshold: 0.3
+device: auto
+save_dir: data/prediction
