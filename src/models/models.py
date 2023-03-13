@@ -1,3 +1,5 @@
+import logging
+
 import torch
 from cpuinfo import get_cpu_info
 from mmdet.apis import inference_detector, init_detector
@@ -47,14 +49,14 @@ class AblationDetector:
         )
 
         # Log the device that is used for the prediction
-        print(f'Device......:')
+        logging.info(f'Device......:')
         if device_ == 'cuda':
-            print(f'GPU.........: {torch.cuda.get_device_name(0)}')
-            print(f'Allocated...: {round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)} Gb')
-            print(f'Cached......: {round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)} Gb')
+            logging.info(f'GPU.........: {torch.cuda.get_device_name(0)}')
+            logging.info(f'Allocated...: {round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)} Gb')
+            logging.info(f'Cached......: {round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)} Gb')
         else:
             info = get_cpu_info()
-            print(f'CPU.........: {info["brand_raw"]}')
+            logging.info(f'CPU.........: {info["brand_raw"]}')
 
     # TODO: add method for forecasting
     def predict(self):
