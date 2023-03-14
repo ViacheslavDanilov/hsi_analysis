@@ -1,0 +1,6 @@
+defaults:
+- main
+- _self_
+
+sly_dir: data/sly_output/pca/abs
+save_dir: data/interim
