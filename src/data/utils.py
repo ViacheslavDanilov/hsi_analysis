@@ -177,15 +177,17 @@ def get_dir_list(
 
 def extract_study_name(
     path: str,
+    idx: int = -3,
 ) -> str:
-    study_name = Path(path).parts[-3]
+    study_name = Path(path).parts[idx]
     return study_name
 
 
 def extract_series_name(
     path: str,
+    idx: int = -2,
 ) -> str:
-    series_name = Path(path).parts[-2]
+    series_name = Path(path).parts[idx]
     return series_name
 
 
