@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 from functools import partial
 from pathlib import Path
 
@@ -24,9 +25,7 @@ def process_dataset(
     df = pd.DataFrame(
         columns=[
             'img_path',
-            'ann_path',
             'img_name',
-            'ann_name',
             'img_height',
             'img_width',
             'stem',
@@ -70,9 +69,7 @@ def process_dataset(
 
         metadata = {
             'img_path': img_path,
-            'ann_path': ann_path,
             'img_name': img_name,
-            'ann_name': ann_name,
             'img_height': ann.img_size[0],
             'img_width': ann.img_size[1],
             'stem': stem,
@@ -115,6 +112,7 @@ def main(cfg: DictConfig) -> None:
     project = sly.Project(cfg.sly_dir, sly.OpenMode.READ)
     meta = project.meta
 
+    # Extract metadata
     processing_func = partial(
         process_dataset,
         meta=meta,
@@ -125,23 +123,52 @@ def main(cfg: DictConfig) -> None:
     )
     df = pd.concat(result)
     df.sort_values(['img_path', 'component'], inplace=True)
-    df.sort_index(inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    df.index += 1
 
-    #     save_path = os.path.join(save_dir, 'metadata.xlsx')
-    #     df.index += 1
-    #     df.to_excel(
-    #         save_path,
-    #         sheet_name='Metadata',
-    #         index=True,
-    #         index_label='ID',
-    #     )
-    print('')
+    log.info(f'Studies............: {len(df["study"].unique())}')
+    log.info(f'Series.............: {len(df["series"].unique())}')
+    log.info(f'Images.............: {len(df["img_path"].unique())}')
 
-    #             img_save_path = os.path.join(save_img_dir, img_data['file_name'])
-    #             shutil.copy(
-    #                 src=sample['img_path'],
-    #                 dst=img_save_path,
-    #             )
+    # Extract reduction technique and modality
+    reduction_ = df['reduction'].unique()
+    assert (
+        reduction_.shape[0] == 1
+    ), 'Multiple reduction techniques are mixed. There should be only one'
+    reduction = reduction_[0]
+    log.info(f'Reduction..........: {reduction}')
+
+    modality_ = df['modality'].unique()
+    assert modality_.shape[0] == 1, 'Multiple modalities are mixed. There should be only one'
+    modality = modality_[0]
+    log.info(f'Modality...........: {modality}')
+
+    # Set save directories
+    save_dir = os.path.join(cfg.save_dir, f'{reduction}_{modality}')
+    img_dir = os.path.join(save_dir, 'img')
+    os.makedirs(img_dir, exist_ok=True)
+
+    # Copy images
+    df['img_path_temp'] = df.loc[:, 'img_path']
+    for idx, row in tqdm(df.iterrows(), desc='Copy images', unit=' images'):
+        img_name = f'{reduction}_{modality}_{row["series"]}_{row["component"]:03}.png'
+        df.at[idx, 'img_path'] = os.path.join(img_dir, img_name)
+        df.at[idx, 'img_name'] = img_name
+        shutil.copy(
+            src=df.loc[idx, 'img_path_temp'],
+            dst=df.loc[idx, 'img_path'],
+        )
+    df.drop('img_path_temp', axis=1, inplace=True)
+
+    df.to_excel(
+        os.path.join(save_dir, 'metadata.xlsx'),
+        sheet_name='Metadata',
+        index=True,
+        index_label='ID',
+    )
+
+    log.info('')
+    log.info(f'Complete')
 
 
 if __name__ == '__main__':
