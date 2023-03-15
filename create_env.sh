@@ -11,3 +11,6 @@ conda init --all --dry-run --verbose
 conda activate ${ENV_NAME}
 python -V
 pip install -r requirements.txt --no-cache-dir
+mim install mmcv-full
+cd src/models/mmdetection || exit
+pip install -v -e .
