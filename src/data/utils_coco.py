@@ -16,13 +16,11 @@ def get_img_info(
     img_data['id'] = img_id  # Unique image ID
     img_data['width'] = width
     img_data['height'] = height
-    reduction = Path(img_path).parts[-5]
-    modality = Path(img_path).parts[-4]
-    img_name = Path(img_path).name
-    img_data['file_name'] = f'{reduction}_{modality}_{img_name}'
+    img_data['file_name'] = Path(img_path).name
     return img_data
 
 
+# TODO: change usage of label path
 def get_ann_info(
     label_path: str,
     img_id: int,
