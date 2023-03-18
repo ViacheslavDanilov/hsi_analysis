@@ -123,12 +123,21 @@ def prepare_coco_subsets(
     Returns:
         None
     """
+    # Add categories
     categories_coco = []
     class_list = list(df['class'].unique())
     class_list = [x for x in class_list if str(x) != 'nan']
     for idx, class_name in enumerate(class_list, start=1):
         categories_coco.append({'id': idx, 'name': class_name})
 
+    # Add source and destination paths
+    df['src_path'] = df.loc[:, 'img_path']
+    df['img_path'] = df.apply(
+        lambda x: os.path.join(save_dir, x['split'], 'data', x['img_name']),
+        axis=1,
+    )
+
+    # Process images and annotations
     subset_list = list(df['split'].unique())
     for subset in subset_list:
 
@@ -136,21 +145,24 @@ def prepare_coco_subsets(
         imgs_coco = []
         anns_coco = []
         ann_id = 0
-        save_img_dir = os.path.join(save_dir, subset, 'data')
-        os.makedirs(save_img_dir, exist_ok=True)
-        for img_id, sample in tqdm(
-            df_subset.iterrows(),
+
+        img_dir = os.path.join(save_dir, subset, 'data')
+        os.makedirs(img_dir, exist_ok=True)
+
+        gb = df_subset.groupby('src_path')
+        for img_id, (src_path, df_img) in tqdm(
+            enumerate(gb, start=0),
             desc=f'{subset.capitalize()} subset processing',
-            unit=' sample',
+            unit=' image',
         ):
+
             img_data = get_img_info(
-                img_path=sample['img_path'],
+                img_path=src_path,
                 img_id=img_id,
             )
 
-            # TODO: fix extraction of ann_info
             ann_data, ann_id = get_ann_info(
-                label_path=sample['ann_path'],
+                df=df_img,
                 img_id=img_id,
                 ann_id=ann_id,
                 box_extension=box_extension,
@@ -158,10 +170,10 @@ def prepare_coco_subsets(
             imgs_coco.append(img_data)
             anns_coco.extend(ann_data)
 
-            img_save_path = os.path.join(save_img_dir, img_data['file_name'])
+            dst_path = df_img['img_path'].unique()[0]
             shutil.copy(
-                src=sample['img_path'],
-                dst=img_save_path,
+                src=src_path,
+                dst=dst_path,
             )
 
         dataset = {
@@ -175,6 +187,7 @@ def prepare_coco_subsets(
             json.dump(dataset, file)
 
     save_path = os.path.join(save_dir, 'metadata.xlsx')
+    df.drop('src_path', axis=1, inplace=True)
     df.index += 1
     df.to_excel(
         save_path,
@@ -205,22 +218,32 @@ def main(cfg: DictConfig) -> None:
     df_split = pd.DataFrame()
     for data_dir in data_dirs:
         meta_path = os.path.join(data_dir, 'metadata.xlsx')
-        df = pd.read_excel(meta_path)
-        df_split_ = split_dataset(
-            df=df,
-            train_size=cfg.train_size,
-            seed=cfg.seed,
-        )
+        df_split_ = pd.read_excel(meta_path)
         df_split = pd.concat([df_split, df_split_])
     df_split.drop('ID', axis=1, inplace=True)
+    df_split = split_dataset(
+        df=df_split,
+        train_size=cfg.train_size,
+        seed=cfg.seed,
+    )
 
-    # TODO: add prepare_coco_subsets function
-    # TODO: copy images to the coco dir
-    # TODO: save metadata
+    # Process and save COCO subsets
+    names = []
+    if cfg.pca:
+        names.append('pca')
+    if cfg.tsne:
+        names.append('tsne')
+    if cfg.abs:
+        names.append('abs')
+    if cfg.ref:
+        names.append('ref')
+
+    dir_name = '_'.join(names)
+    save_dir = os.path.join(cfg.save_dir, dir_name)
     prepare_coco_subsets(
         df=df_split,
         box_extension=cfg.box_extension,
-        save_dir=cfg.save_dir,
+        save_dir=save_dir,
     )
 
     log.info('')
