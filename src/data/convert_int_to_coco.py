@@ -3,7 +3,6 @@ import logging
 import os
 import shutil
 from glob import glob
-from pathlib import Path
 from typing import List
 
 import hydra
@@ -12,23 +11,21 @@ from omegaconf import DictConfig, OmegaConf
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-from src.data.utils import extract_body_part, extract_study_name, extract_temperature, get_file_list
 from src.data.utils_coco import get_ann_info, get_img_info
-from src.data.utils_sly import CLASS_MAP
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def filter_sly_dirs(
+def filter_dirs(
     src_dir: str,
+    pca: bool = True,
+    tsne: bool = False,
     abs: bool = True,
     ref: bool = False,
-    pca: bool = False,
-    tsne: bool = True,
 ) -> List[str]:
 
-    dir_list = glob(src_dir + '/*/*/', recursive=True)
+    dir_list = glob(src_dir + '/*/', recursive=True)
 
     # Filter reduction directories
     initial_list = []
@@ -51,38 +48,6 @@ def filter_sly_dirs(
         output_list.extend(mod_list_ref)
 
     return output_list
-
-
-def add_metadata(
-    df: pd.DataFrame,
-) -> pd.DataFrame:
-    """Enrich metadata of the dataset.
-
-    Args:
-        df: a source data frame with image and annotation paths
-    Returns:
-        df: an updated data frame with split series into series names and PCs
-    """
-    df['img_name'] = df['img_path'].apply(lambda x: Path(x).name)
-    df['ann_name'] = df['ann_path'].apply(lambda x: Path(x).name)
-    df['stem'] = df['img_path'].apply(lambda x: Path(x).stem)
-    for idx, row in df.iterrows():
-        symbol_idx = row['stem'].rfind('_')
-        series_name = row['stem'][:symbol_idx]
-        df.at[idx, 'series'] = series_name
-    df['study'] = df['img_path'].apply(extract_study_name)
-    df['reduction'] = df['img_path'].apply(lambda x: Path(x).parts[-5])
-    df['modality'] = df['img_path'].apply(lambda x: Path(x).parts[-4])
-    df['component'] = df['stem'].apply(lambda x: int(x.split('_')[-1]))
-    df['body_part'] = df['img_path'].apply(extract_body_part)
-    df['temperature'] = df['stem'].apply(lambda x: extract_temperature)
-    for idx, row in df.iterrows():
-        temperature_idx, temperature_ = extract_temperature(row['stem'])
-        temperature = temperature_.split('_')[0]
-        df.at[idx, 'temperature_idx'] = temperature_idx
-        df.at[idx, 'temperature'] = temperature
-
-    return df
 
 
 def split_dataset(
@@ -158,10 +123,21 @@ def prepare_coco_subsets(
     Returns:
         None
     """
+    # Add categories
     categories_coco = []
-    for idx, (key, value) in enumerate(CLASS_MAP.items()):
-        categories_coco.append({'id': value, 'name': key})
+    class_list = list(df['class'].unique())
+    class_list = [x for x in class_list if str(x) != 'nan']
+    for idx, class_name in enumerate(class_list, start=1):
+        categories_coco.append({'id': idx, 'name': class_name})
 
+    # Add source and destination paths
+    df['src_path'] = df.loc[:, 'img_path']
+    df['img_path'] = df.apply(
+        lambda x: os.path.join(save_dir, x['split'], 'data', x['img_name']),
+        axis=1,
+    )
+
+    # Process images and annotations
     subset_list = list(df['split'].unique())
     for subset in subset_list:
 
@@ -169,20 +145,24 @@ def prepare_coco_subsets(
         imgs_coco = []
         anns_coco = []
         ann_id = 0
-        save_img_dir = os.path.join(save_dir, subset, 'data')
-        os.makedirs(save_img_dir, exist_ok=True)
-        for img_id, sample in tqdm(
-            df_subset.iterrows(),
+
+        img_dir = os.path.join(save_dir, subset, 'data')
+        os.makedirs(img_dir, exist_ok=True)
+
+        gb = df_subset.groupby('src_path')
+        for img_id, (src_path, df_img) in tqdm(
+            enumerate(gb, start=0),
             desc=f'{subset.capitalize()} subset processing',
-            unit=' sample',
+            unit=' image',
         ):
+
             img_data = get_img_info(
-                img_path=sample['img_path'],
+                img_path=src_path,
                 img_id=img_id,
             )
 
             ann_data, ann_id = get_ann_info(
-                label_path=sample['ann_path'],
+                df=df_img,
                 img_id=img_id,
                 ann_id=ann_id,
                 box_extension=box_extension,
@@ -190,10 +170,10 @@ def prepare_coco_subsets(
             imgs_coco.append(img_data)
             anns_coco.extend(ann_data)
 
-            img_save_path = os.path.join(save_img_dir, img_data['file_name'])
+            dst_path = df_img['img_path'].unique()[0]
             shutil.copy(
-                src=sample['img_path'],
-                dst=img_save_path,
+                src=src_path,
+                dst=dst_path,
             )
 
         dataset = {
@@ -207,6 +187,7 @@ def prepare_coco_subsets(
             json.dump(dataset, file)
 
     save_path = os.path.join(save_dir, 'metadata.xlsx')
+    df.drop('src_path', axis=1, inplace=True)
     df.index += 1
     df.to_excel(
         save_path,
@@ -218,14 +199,14 @@ def prepare_coco_subsets(
 
 @hydra.main(
     config_path=os.path.join(os.getcwd(), 'config'),
-    config_name='convert_sly_to_coco',
+    config_name='convert_int_to_coco',
     version_base=None,
 )
 def main(cfg: DictConfig) -> None:
     log.info(f'Config:\n\n{OmegaConf.to_yaml(cfg)}')
 
     # Filter used directories
-    sly_dirs = filter_sly_dirs(
+    data_dirs = filter_dirs(
         src_dir=cfg.src_dir,
         abs=cfg.abs,
         ref=cfg.ref,
@@ -233,62 +214,40 @@ def main(cfg: DictConfig) -> None:
         tsne=cfg.tsne,
     )
 
-    # Get list of images and annotations
-    img_list = []
-    ann_list = []
-    for sly_dir in sly_dirs:
-        img_list_ = get_file_list(
-            src_dirs=sly_dir,
-            ext_list='.png',
-        )
-        ann_list_ = get_file_list(
-            src_dirs=sly_dir,
-            ext_list='.json',
-        )
-        img_list.extend(img_list_)
-        ann_list.extend(ann_list_)
-
-    # Add additional metadata
-    ann_list = [path for path in ann_list if Path(path).name != 'meta.json']
-    df = pd.DataFrame(
-        {
-            'img_path': img_list,
-            'ann_path': ann_list,
-        },
-    )
-    df = add_metadata(df)
-
-    # Split dataset using body part stratification
-    df = split_dataset(
-        df=df,
+    # Split datasets
+    df_split = pd.DataFrame()
+    for data_dir in data_dirs:
+        meta_path = os.path.join(data_dir, 'metadata.xlsx')
+        df_split_ = pd.read_excel(meta_path)
+        df_split = pd.concat([df_split, df_split_])
+    df_split.drop('ID', axis=1, inplace=True)
+    df_split = split_dataset(
+        df=df_split,
         train_size=cfg.train_size,
         seed=cfg.seed,
     )
 
-    # Prepare COCO subsets
+    # Process and save COCO subsets
     names = []
-
     if cfg.pca:
         names.append('pca')
-
     if cfg.tsne:
         names.append('tsne')
-
     if cfg.abs:
         names.append('abs')
-
     if cfg.ref:
         names.append('ref')
 
     dir_name = '_'.join(names)
     save_dir = os.path.join(cfg.save_dir, dir_name)
     prepare_coco_subsets(
-        df=df,
-        box_extension=dict(cfg.box_extension),
+        df=df_split,
+        box_extension=cfg.box_extension,
         save_dir=save_dir,
     )
 
-    log.info('Complete')
+    log.info('')
+    log.info(f'Complete')
 
 
 if __name__ == '__main__':
