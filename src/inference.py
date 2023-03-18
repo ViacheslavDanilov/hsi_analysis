@@ -30,7 +30,7 @@ def main(cfg: DictConfig) -> None:
         ],
     )
     log.info('')
-    log.info(f'Images to predict..: {len(img_paths)}')
+    log.info(f'Images to predict...: {len(img_paths)}')
 
     # Initialize model and load its weights
     detector = AblationDetector(

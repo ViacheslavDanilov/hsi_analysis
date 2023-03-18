@@ -56,14 +56,11 @@ class AblationDetector:
         self.model.test_cfg.rcnn.score_thr = conf_threshold
 
         # Log the device that is used for the prediction
-        logging.info(f'Device......:')
         if device_ == 'cuda':
-            logging.info(f'GPU.........: {torch.cuda.get_device_name(0)}')
-            logging.info(f'Allocated...: {round(torch.cuda.memory_allocated(0) / 1024 ** 3, 1)} Gb')
-            logging.info(f'Cached......: {round(torch.cuda.memory_reserved(0) / 1024 ** 3, 1)} Gb')
+            logging.info(f'Device..............: {torch.cuda.get_device_name(0)}')
         else:
             info = get_cpu_info()
-            logging.info(f'CPU.........: {info["brand_raw"]}')
+            logging.info(f'Device..............: {info["brand_raw"]}')
 
     def predict(
         self,
