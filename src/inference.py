@@ -1,9 +1,7 @@
 import logging
 import os
-from typing import List, Tuple
 
 import hydra
-import numpy as np
 from omegaconf import DictConfig, OmegaConf
 
 from src.data.utils import get_file_list
@@ -11,21 +9,6 @@ from src.models.models import AblationDetector
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
-
-
-def rescale_detections(
-    detections: List[np.ndarray],
-    src_size: Tuple[int, int],
-    new_size: Tuple[int, int],
-) -> List[np.ndarray]:
-
-    for detections_per_class in detections:
-        detections_per_class[:, 0] *= new_size[1] / src_size[1]  # x_min
-        detections_per_class[:, 1] *= new_size[0] / src_size[0]  # y_min
-        detections_per_class[:, 2] *= new_size[1] / src_size[1]  # x_max
-        detections_per_class[:, 3] *= new_size[0] / src_size[0]  # y_max
-
-    return detections
 
 
 @hydra.main(
@@ -46,16 +29,37 @@ def main(cfg: DictConfig) -> None:
             '.bmp',
         ],
     )
+    log.info('')
+    log.info(f'Images to predict..: {len(img_paths)}')
 
     # Initialize model and load its weights
-    ablation_detector = AblationDetector(
+    detector = AblationDetector(
         model_dir=cfg.model_dir,
         conf_threshold=cfg.conf_threshold,
-        iou_threshold=cfg.iou_threshold,
         device=cfg.device,
     )
 
-    detections = ablation_detector.predict(img_paths)
+    # Make predictions and get raw detections
+    detections = detector.predict(
+        img_paths=img_paths,
+    )
+
+    # Process predictions
+    df = detector.process_detections(
+        img_paths=img_paths,
+        detections=detections,
+    )
+
+    # Save prediction metadata
+    os.makedirs(cfg.save_dir, exist_ok=True)
+    save_path = os.path.join(cfg.save_dir, 'predictions.xlsx')
+    df.index += 1
+    df.to_excel(
+        save_path,
+        sheet_name='Predictions',
+        index=True,
+        index_label='ID',
+    )
 
 
 if __name__ == '__main__':
