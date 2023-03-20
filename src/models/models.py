@@ -1,12 +1,14 @@
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
+import cv2
 import numpy as np
 import pandas as pd
 import torch
 from cpuinfo import get_cpu_info
 from mmdet.apis import inference_detector, init_detector
+from sklearn.cluster import MeanShift
 
 from src.data.utils import get_file_list
 
@@ -123,3 +125,71 @@ class AblationDetector:
         df.reset_index(drop=True, inplace=True)
 
         return df
+
+
+class AblationSegmenter:
+    """A class used during the inference of the segmentation pipeline."""
+
+    def __init__(
+        self,
+        model_name: str,
+        seed: int = 11,
+    ):
+
+        self.model_name = model_name
+
+        if model_name == 'mean_shift':
+            self.model = MeanShift()
+
+    def __call__(
+        self,
+        img: np.ndarray,
+        box: List[int],
+        box_offset: List[int],
+    ) -> Tuple[np.ndarray, int]:
+
+        X = self._process_box(
+            img=img,
+            box=box,
+            box_offset=box_offset,
+        )
+
+        return X, 5  # TODO: fix return value
+
+    @staticmethod
+    def _process_box(
+        img: np.ndarray,
+        box: List[int],
+        box_offset: List[int],
+    ) -> np.ndarray:
+
+        x1, y1, x2, y2 = box
+        offset_x, offset_y = box_offset
+        img_box = img[
+            y1 - offset_y : y2 + offset_y,
+            x1 - offset_x : x2 + offset_x,
+            :,
+        ]
+        img_box_norm = cv2.normalize(img_box, None, 0, 1, cv2.NORM_MINMAX, cv2.CV_32F)
+        img_box_height, img_box_width, img_box_depth = img_box_norm.shape
+        img_out = img_box_norm.reshape(img_box_height * img_box_width, img_box_depth)
+
+        return img_out
+
+
+if __name__ == '__main__':
+
+    model_name = 'mean_shift'
+    box = [659, 553, 708, 601]  # x1, y1, x2, y2
+    box_offset = [10, 10]  # [horizontal, vertical]
+
+    img_path = 'data/raw_converted/abs/30_08_2019_test_01_liver/10_00_39_T6=110/001.png'
+    img = cv2.imread(img_path)
+
+    a = AblationSegmenter(model_name)
+    b = a(
+        img=img,
+        box=box,
+        box_offset=box_offset,
+    )
+    print('Complete')
