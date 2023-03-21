@@ -9,6 +9,7 @@ import torch
 from cpuinfo import get_cpu_info
 from mmdet.apis import inference_detector, init_detector
 from sklearn.cluster import MeanShift
+from sklearn.preprocessing import MinMaxScaler, PowerTransformer, RobustScaler, StandardScaler
 
 from src.data.utils import get_file_list
 
@@ -133,7 +134,6 @@ class AblationSegmenter:
     def __init__(
         self,
         model_name: str,
-        seed: int = 11,
     ):
 
         self.model_name = model_name
@@ -146,18 +146,42 @@ class AblationSegmenter:
         img: np.ndarray,
         box: List[int],
         box_offset: List[int],
-    ) -> Tuple[np.ndarray, int]:
+        norm_type: str = 'standard',
+    ) -> Tuple[np.ndarray, np.ndarray]:
 
-        X = self._process_box(
+        # Crop the image and extract the box
+        img_crop = self._crop_image(
             img=img,
             box=box,
             box_offset=box_offset,
         )
 
-        return X, 5  # TODO: fix return value
+        # Reshape the box
+        img_res = img_crop.reshape(
+            img_crop.shape[0] * img_crop.shape[1],
+            img_crop.shape[2],
+        )
+
+        # Normalization
+        img_norm = self._normalize(
+            data=img_res,
+            norm_type=norm_type,
+        )
+
+        # Clustering
+        mask_ = self.model.fit_predict(img_norm)
+
+        # Resize back to the original size
+        mask = mask_.reshape(img_crop.shape[0], img_crop.shape[1])
+
+        # mask_mean_shift = label_to_rgb(mask_label=mask)   # TODO: think of the implementation of this feature
+        # unique_clusters = list(np.unique(mask))           # TODO: remove later
+        # num_clusters = len(unique_clusters)               # TODO: remove later
+
+        return img_crop, mask
 
     @staticmethod
-    def _process_box(
+    def _crop_image(
         img: np.ndarray,
         box: List[int],
         box_offset: List[int],
@@ -170,26 +194,45 @@ class AblationSegmenter:
             x1 - offset_x : x2 + offset_x,
             :,
         ]
-        img_box_norm = cv2.normalize(img_box, None, 0, 1, cv2.NORM_MINMAX, cv2.CV_32F)
-        img_box_height, img_box_width, img_box_depth = img_box_norm.shape
-        img_out = img_box_norm.reshape(img_box_height * img_box_width, img_box_depth)
 
-        return img_out
+        return img_box
+
+    @staticmethod
+    def _normalize(
+        data: np.ndarray,
+        norm_type: str = 'standard',
+    ) -> np.ndarray:
+
+        # Preprocess features
+        if norm_type == 'minmax':
+            scaler = MinMaxScaler().fit(data)
+        elif norm_type == 'standard':
+            scaler = StandardScaler().fit(data)
+        elif norm_type == 'robust':
+            scaler = RobustScaler().fit(data)
+        elif norm_type == 'power':
+            scaler = PowerTransformer().fit(data)
+
+        data = scaler.transform(data) if norm_type != 'raw' else data
+
+        return data
 
 
 if __name__ == '__main__':
 
     model_name = 'mean_shift'
     box = [659, 553, 708, 601]  # x1, y1, x2, y2
-    box_offset = [10, 10]  # [horizontal, vertical]
+    box_offset = [0, 0]  # [horizontal, vertical]
+    norm_type = 'standard'
 
     img_path = 'data/raw_converted/abs/30_08_2019_test_01_liver/10_00_39_T6=110/001.png'
     img = cv2.imread(img_path)
 
     a = AblationSegmenter(model_name)
-    b = a(
+    box_img, box_mask = a(
         img=img,
         box=box,
         box_offset=box_offset,
+        norm_type=norm_type,
     )
     print('Complete')
