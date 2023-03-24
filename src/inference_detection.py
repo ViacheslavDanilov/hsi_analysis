@@ -13,7 +13,7 @@ log.setLevel(logging.INFO)
 
 @hydra.main(
     config_path=os.path.join(os.getcwd(), 'config'),
-    config_name='inference',
+    config_name='inference_detection',
     version_base=None,
 )
 def main(cfg: DictConfig) -> None:
@@ -60,6 +60,9 @@ def main(cfg: DictConfig) -> None:
         index=True,
         index_label='ID',
     )
+
+    log.info('')
+    log.info(f'Complete')
 
 
 if __name__ == '__main__':
