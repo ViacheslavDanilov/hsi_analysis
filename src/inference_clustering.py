@@ -1,12 +1,14 @@
 import logging
 import os
 from functools import partial
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 import cv2
 import hydra
 import imutils
 import numpy as np
+import pandas as pd
 from joblib import Parallel, delayed
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
@@ -27,25 +29,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-def rescale_box(  # TODO: remove if it is not needed
-    box: List[int],
-    input_size: List[int],
-    output_size: List[int],
-) -> List[int]:
-
-    y_scale = output_size[0] / input_size[0]
-    x_scale = output_size[1] / input_size[1]
-
-    box_rescaled = [
-        int(box[0] * x_scale),
-        int(box[1] * y_scale),
-        int(box[2] * x_scale),
-        int(box[3] * y_scale),
-    ]
-
-    return box_rescaled
-
-
 def segment_hsi(
     hsi_path: str,
     save_dir: str,
@@ -56,8 +39,6 @@ def segment_hsi(
     src_size: Tuple[int, int] = (744, 1000),
 ) -> List:
 
-    hsi_path = 'data/raw/30_08_2019_test_01_liver/10_00_39_T6=110/SpecCube.dat'  # TODO: remove after implementation
-
     # Read HSI file
     hsi = read_hsi(
         path=hsi_path,
@@ -67,20 +48,22 @@ def segment_hsi(
     # Extract additional information
     study_name = extract_study_name(path=hsi_path)
     series_name = extract_series_name(path=hsi_path)
-    body_part = extract_body_part(path=hsi_path)  # TODO: implement usage
-    temperature_idx, temperature = extract_temperature(path=hsi_path)  # TODO: implement usage
-    date, time = extract_time_stamp(path=hsi_path)  # TODO: implement usage
+    body_part = extract_body_part(path=hsi_path)
+    temperature_idx, temperature = extract_temperature(path=hsi_path)
+    date, time = extract_time_stamp(path=hsi_path)
 
     # Initialize clustering model
     model = AblationSegmenter(model_name)
 
     # Segment the ablation area
-    box = [659, 553, 708, 601]  # TODO: temporary solution. Change in the future
+    box = [659, 553, 708, 601]  # TODO: temporary solution. Change later
     save_dir_img = os.path.join(save_dir, model_name, study_name, series_name, 'img')
     save_dir_box = os.path.join(save_dir, model_name, study_name, series_name, 'box')
     os.makedirs(save_dir_img, exist_ok=True)
     os.makedirs(save_dir_box, exist_ok=True)
-    for idx in range(hsi.shape[2]):
+
+    metadata = []
+    for idx in tqdm(range(hsi.shape[2]), leave=True):
 
         img = hsi[:, :, idx]
 
@@ -116,7 +99,37 @@ def segment_hsi(
         cv2.imwrite(save_path_img, img)
         cv2.imwrite(save_path_box, box_stack)
 
-    return []
+        metadata.append(
+            {
+                'source_dir': str(Path(hsi_path).parent),
+                'study_name': study_name,
+                'series_name': series_name,
+                'hsi_name': str(Path(hsi_path).name),
+                'hsi_path': hsi_path,
+                'hsi_height': hsi.shape[0],
+                'hsi_width': hsi.shape[1],
+                'hsi_depth': hsi.shape[2],
+                'img_name': img_name,
+                'img_path': save_path_img,
+                'img_height': img.shape[0],
+                'img_width': img.shape[1],
+                'box_name': img_name,
+                'box_path': save_path_box,
+                'box_height': box_img.shape[0],
+                'box_width': box_img.shape[1],
+                'date': date,
+                'time': time,
+                'body_part': body_part,
+                'temperature_id': temperature_idx,
+                'temperature': temperature,
+                'wavelength_id': idx + 1,
+                'wavelength': 500 + 5 * idx,
+                'clusters': unique_clusters,
+                'num_clusters': num_clusters,
+            },
+        )
+
+    return metadata
 
 
 @hydra.main(
@@ -152,11 +165,19 @@ def main(cfg: DictConfig) -> None:
         src_size=tuple(cfg.src_size),
         save_dir=cfg.save_dir,
     )
-    result = Parallel(n_jobs=-1, prefer='threads')(
+    result_ = Parallel(n_jobs=-1, prefer='threads')(
         delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Clustering', unit=' HSI')
     )
-    metadata: List[Dict] = sum(result, [])
-
+    result: List[Dict] = sum(result_, [])
+    df = pd.DataFrame(result)
+    save_path = os.path.join(cfg.save_dir, cfg.model_name, 'metadata.xlsx')
+    df.index += 1
+    df.to_excel(
+        save_path,
+        sheet_name='Metadata',
+        index=True,
+        index_label='ID',
+    )
     log.info('')
     log.info(f'Complete')
 
