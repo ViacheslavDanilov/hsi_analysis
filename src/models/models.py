@@ -5,6 +5,7 @@ from typing import List, Tuple
 import cv2
 import numpy as np
 import pandas as pd
+import skimage
 import torch
 from cpuinfo import get_cpu_info
 from mmdet.apis import inference_detector, init_detector
@@ -174,11 +175,15 @@ class AblationSegmenter:
         # Resize back to the original size
         mask = mask_.reshape(img_crop.shape[0], img_crop.shape[1])
 
-        # mask_mean_shift = label_to_rgb(mask_label=mask)   # TODO: think of the implementation of this feature
-        # unique_clusters = list(np.unique(mask))           # TODO: remove later
-        # num_clusters = len(unique_clusters)               # TODO: remove later
-
         return img_crop, mask
+
+    @staticmethod
+    def label_to_rgb(
+        mask_index: np.ndarray,
+    ) -> np.ndarray:
+        mask_rgb = skimage.color.label2rgb(mask_index)
+        mask_rgb = (mask_rgb * 255).astype(np.uint8)
+        return mask_rgb
 
     @staticmethod
     def _crop_image(
@@ -192,7 +197,6 @@ class AblationSegmenter:
         img_box = img[
             y1 - offset_y : y2 + offset_y,
             x1 - offset_x : x2 + offset_x,
-            :,
         ]
 
         return img_box
@@ -235,4 +239,7 @@ if __name__ == '__main__':
         box_offset=box_offset,
         norm_type=norm_type,
     )
+    unique_clusters = list(np.unique(box_mask))
+    num_clusters = len(unique_clusters)
+    box_mask_rgb = a.label_to_rgb(box_mask)
     print('Complete')
