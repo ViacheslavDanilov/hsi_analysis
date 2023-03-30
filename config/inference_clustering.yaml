@@ -1,0 +1,13 @@
+defaults:
+- main
+- _self_
+
+src_dir: data/raw
+modality: abs                       # abs or ref
+include_dirs: []
+exclude_dirs: []
+model_name: mean_shift
+norm_type: standard                 # minmax, standard, robust, power, raw
+box_offset: [0, 0]                  # [horizontal, vertical]
+src_size: [744, 1000]
+save_dir: experiments/clustering
