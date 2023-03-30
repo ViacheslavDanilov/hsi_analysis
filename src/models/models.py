@@ -146,7 +146,7 @@ class AblationSegmenter:
         self,
         img: np.ndarray,
         box: List[int],
-        box_offset: List[int],
+        box_offset: Tuple[int, int],
         norm_type: str = 'standard',
     ) -> Tuple[np.ndarray, np.ndarray]:
 
@@ -189,7 +189,7 @@ class AblationSegmenter:
     def _crop_image(
         img: np.ndarray,
         box: List[int],
-        box_offset: List[int],
+        box_offset: Tuple[int, int],
     ) -> np.ndarray:
 
         x1, y1, x2, y2 = box
@@ -226,7 +226,7 @@ if __name__ == '__main__':
 
     model_name = 'mean_shift'
     box = [659, 553, 708, 601]  # x1, y1, x2, y2
-    box_offset = [0, 0]  # [horizontal, vertical]
+    box_offset = (0, 0)  # [horizontal, vertical]
     norm_type = 'standard'
 
     img_path = 'data/raw_converted/abs/30_08_2019_test_01_liver/10_00_39_T6=110/001.png'
