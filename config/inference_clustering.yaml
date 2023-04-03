@@ -11,4 +11,5 @@ norm_type: standard                 # minmax, standard, robust, power, raw
 box_offset: [0, 0]                  # [horizontal, vertical]
 src_size: [744, 1000]
 metadata_path: data/interim/pca_abs/metadata.xlsx
+apply_filtering: true
 save_dir: experiments/clustering

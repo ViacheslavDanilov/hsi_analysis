@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 from omegaconf import DictConfig, OmegaConf
+from PIL import Image, ImageFilter
 from tqdm import tqdm
 
 from src.data.utils import (
@@ -29,6 +30,36 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
+def filter_mask(
+    mask: np.ndarray,
+) -> np.ndarray:
+
+    unique_clusters = list(np.unique(mask))
+    unique_clusters.remove(0)
+
+    mask_out = np.zeros_like(mask)
+    for cluster_idx in unique_clusters:
+        mask_idx = (mask == cluster_idx).astype(np.uint8)
+
+        # Morphological smoothing
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        _mask_morph = cv2.morphologyEx(mask_idx, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+        # Filtering
+        _mask_smooth = Image.fromarray(_mask_morph)
+        _mask_smooth = _mask_smooth.filter(ImageFilter.ModeFilter(size=3))
+        _mask_smooth = np.asarray(_mask_smooth)
+
+        # Stacking layers
+        mask_out_ = _mask_smooth * cluster_idx
+        for y in range(mask.shape[0]):
+            for x in range(mask.shape[1]):
+                if mask_out_[y][x] == cluster_idx:
+                    mask_out[y][x] = mask_out_[y][x]
+
+    return mask_out
+
+
 def segment_hsi(
     hsi_path: str,
     meta: pd.DataFrame,
@@ -37,6 +68,7 @@ def segment_hsi(
     model_name: str = 'mean_shift',
     norm_type: str = 'standard',
     box_offset: Tuple[int, int] = (0, 0),
+    apply_filtering: bool = True,
     src_size: Tuple[int, int] = (744, 1000),
 ) -> List:
 
@@ -94,6 +126,9 @@ def segment_hsi(
                 box_offset=box_offset,
                 norm_type=norm_type,
             )
+
+            if apply_filtering:
+                box_mask = filter_mask(box_mask)
 
             # Get number of clusters
             unique_clusters = list(np.unique(box_mask))
@@ -185,6 +220,7 @@ def main(cfg: DictConfig) -> None:
         norm_type=cfg.norm_type,
         box_offset=tuple(cfg.box_offset),
         src_size=tuple(cfg.src_size),
+        apply_filtering=cfg.apply_filtering,
         save_dir=cfg.save_dir,
     )
     result_ = Parallel(n_jobs=-1, prefer='threads')(
