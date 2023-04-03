@@ -31,6 +31,7 @@ log.setLevel(logging.INFO)
 
 def segment_hsi(
     hsi_path: str,
+    meta: pd.DataFrame,
     save_dir: str,
     modality: str = 'abs',
     model_name: str = 'mean_shift',
@@ -56,78 +57,95 @@ def segment_hsi(
     model = AblationSegmenter(model_name)
 
     # Segment the ablation area
-    box = [659, 553, 708, 601]  # TODO: temporary solution. Change later
-    save_dir_img = os.path.join(save_dir, model_name, study_name, series_name, 'img')
-    save_dir_box = os.path.join(save_dir, model_name, study_name, series_name, 'box')
-    os.makedirs(save_dir_img, exist_ok=True)
-    os.makedirs(save_dir_box, exist_ok=True)
-
     metadata = []
-    for idx in tqdm(range(hsi.shape[2]), leave=True):
+    box_ = meta[(meta['study'] == study_name) & (meta['series'] == series_name)]
+    box_ = box_[box_[['x1', 'y1', 'x2', 'y2']].notnull().all(1)]
 
-        img = hsi[:, :, idx]
+    if len(box_) == 0:
+        pass
+    else:
+        box = [
+            int(np.mean(box_.x1)),
+            int(np.mean(box_.y1)),
+            int(np.mean(box_.x2)),
+            int(np.mean(box_.y2)),
+        ]
+        save_dir_img = os.path.join(save_dir, model_name, modality, study_name, series_name, 'img')
+        save_dir_box = os.path.join(save_dir, model_name, modality, study_name, series_name, 'box')
+        os.makedirs(save_dir_img, exist_ok=True)
+        os.makedirs(save_dir_box, exist_ok=True)
 
-        # Process source image
-        img_size = img.shape[:-1] if len(img.shape) == 3 else img.shape
-        if img_size != src_size:
-            img = imutils.resize(img, height=src_size[0], inter=cv2.INTER_LINEAR)
-        img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-        img = cv2.equalizeHist(img)
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        for idx in tqdm(range(hsi.shape[2]), leave=True):
 
-        # Clustering
-        box_img, box_mask = model(
-            img=img,
-            box=box,
-            box_offset=box_offset,
-            norm_type=norm_type,
-        )
+            img = hsi[:, :, idx]
 
-        # Get number of clusters
-        unique_clusters = list(np.unique(box_mask))
-        num_clusters = len(unique_clusters)
-        wavelength = 500 + 5 * idx
-        wavelength_id = idx + 1
-        log.info(f'ID = {wavelength_id:03}, Wavelength = {wavelength}, Clusters = {num_clusters}')
+            # Process source image
+            img_size = img.shape[:-1] if len(img.shape) == 3 else img.shape
+            if img_size != src_size:
+                img = imutils.resize(img, height=src_size[0], inter=cv2.INTER_LINEAR)
+            img = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            img = cv2.equalizeHist(img)
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
-        # Stack and save segmentation masks
-        box_mask_rgb = model.label_to_rgb(box_mask)
-        box_stack = np.hstack([box_img, box_mask_rgb])
-        img_name = f'{wavelength_id:03}.png'
-        save_path_img = os.path.join(save_dir_img, img_name)
-        save_path_box = os.path.join(save_dir_box, img_name)
-        cv2.imwrite(save_path_img, img)
-        cv2.imwrite(save_path_box, box_stack)
+            # Clustering
+            box_img, box_mask = model(
+                img=img,
+                box=box,
+                box_offset=box_offset,
+                norm_type=norm_type,
+            )
 
-        metadata.append(
-            {
-                'source_dir': str(Path(hsi_path).parent),
-                'study_name': study_name,
-                'series_name': series_name,
-                'hsi_name': str(Path(hsi_path).name),
-                'hsi_path': hsi_path,
-                'hsi_height': hsi.shape[0],
-                'hsi_width': hsi.shape[1],
-                'hsi_depth': hsi.shape[2],
-                'img_name': img_name,
-                'img_path': save_path_img,
-                'img_height': img.shape[0],
-                'img_width': img.shape[1],
-                'box_name': img_name,
-                'box_path': save_path_box,
-                'box_height': box_img.shape[0],
-                'box_width': box_img.shape[1],
-                'date': date,
-                'time': time,
-                'body_part': body_part,
-                'temperature_id': temperature_idx,
-                'temperature': temperature,
-                'wavelength_id': idx + 1,
-                'wavelength': 500 + 5 * idx,
-                'clusters': unique_clusters,
-                'num_clusters': num_clusters,
-            },
-        )
+            # Get number of clusters
+            unique_clusters = list(np.unique(box_mask))
+            num_clusters = len(unique_clusters)
+            wavelength = 500 + 5 * idx
+            wavelength_id = idx + 1
+            log.info(
+                f'Study = {study_name}, '
+                f'Series = {series_name}, '
+                f'ID = {wavelength_id:03}, '
+                f'Wavelength = {wavelength}, '
+                f'Clusters = {num_clusters}',
+            )
+
+            # Stack and save segmentation masks
+            box_mask_rgb = model.label_to_rgb(box_mask)
+            box_stack = np.hstack([box_img, box_mask_rgb])
+            img_name = f'{wavelength_id:03}.png'
+            save_path_img = os.path.join(save_dir_img, img_name)
+            save_path_box = os.path.join(save_dir_box, img_name)
+            cv2.imwrite(save_path_img, img)
+            cv2.imwrite(save_path_box, box_stack)
+
+            metadata.append(
+                {
+                    'source_dir': str(Path(hsi_path).parent),
+                    'study_name': study_name,
+                    'series_name': series_name,
+                    'hsi_name': str(Path(hsi_path).name),
+                    'hsi_path': hsi_path,
+                    'hsi_height': hsi.shape[0],
+                    'hsi_width': hsi.shape[1],
+                    'hsi_depth': hsi.shape[2],
+                    'img_name': img_name,
+                    'img_path': save_path_img,
+                    'img_height': img.shape[0],
+                    'img_width': img.shape[1],
+                    'box_name': img_name,
+                    'box_path': save_path_box,
+                    'box_height': box_img.shape[0],
+                    'box_width': box_img.shape[1],
+                    'date': date,
+                    'time': time,
+                    'body_part': body_part,
+                    'temperature_id': temperature_idx,
+                    'temperature': temperature,
+                    'wavelength_id': idx + 1,
+                    'wavelength': 500 + 5 * idx,
+                    'clusters': unique_clusters,
+                    'num_clusters': num_clusters,
+                },
+            )
 
     return metadata
 
@@ -155,9 +173,13 @@ def main(cfg: DictConfig) -> None:
     )
     log.info(f'HSI found..........: {len(hsi_paths)}')
 
+    # Read metadata
+    df = pd.read_excel(cfg.metadata_path)
+
     # Multiprocessing of HSI files
     processing_func = partial(
         segment_hsi,
+        meta=df,
         modality=cfg.modality,
         model_name=cfg.model_name,
         norm_type=cfg.norm_type,
