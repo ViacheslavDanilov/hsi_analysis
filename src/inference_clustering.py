@@ -102,10 +102,30 @@ def segment_hsi(
             int(np.mean(box_.x2)),
             int(np.mean(box_.y2)),
         ]
-        save_dir_img = os.path.join(save_dir, model_name, modality, study_name, series_name, 'img')
-        save_dir_box = os.path.join(save_dir, model_name, modality, study_name, series_name, 'box')
+        save_dir_img = os.path.join(
+            save_dir,
+            model_name,
+            study_name,
+            series_name,
+            f'img_{modality}',
+        )
+        save_dir_box_src = os.path.join(
+            save_dir,
+            model_name,
+            study_name,
+            series_name,
+            f'box_{modality}_src',
+        )
+        save_dir_box_seg = os.path.join(
+            save_dir,
+            model_name,
+            study_name,
+            series_name,
+            f'box_{modality}_seg',
+        )
         os.makedirs(save_dir_img, exist_ok=True)
-        os.makedirs(save_dir_box, exist_ok=True)
+        os.makedirs(save_dir_box_src, exist_ok=True)
+        os.makedirs(save_dir_box_seg, exist_ok=True)
 
         for idx in tqdm(range(hsi.shape[2]), leave=True):
 
@@ -120,7 +140,7 @@ def segment_hsi(
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
 
             # Clustering
-            box_img, box_mask = model(
+            box_src, box_mask = model(
                 img=img,
                 box=box,
                 box_offset=box_offset,
@@ -144,13 +164,14 @@ def segment_hsi(
             )
 
             # Stack and save segmentation masks
-            box_mask_rgb = model.label_to_rgb(box_mask)
-            box_stack = np.hstack([box_img, box_mask_rgb])
+            box_seg = model.label_to_rgb(box_mask)
             img_name = f'{wavelength_id:03}.png'
             save_path_img = os.path.join(save_dir_img, img_name)
-            save_path_box = os.path.join(save_dir_box, img_name)
+            save_path_box_src = os.path.join(save_dir_box_src, img_name)
+            save_path_box_seg = os.path.join(save_dir_box_seg, img_name)
             cv2.imwrite(save_path_img, img)
-            cv2.imwrite(save_path_box, box_stack)
+            cv2.imwrite(save_path_box_src, box_src)
+            cv2.imwrite(save_path_box_seg, box_seg)
 
             metadata.append(
                 {
@@ -167,9 +188,10 @@ def segment_hsi(
                     'img_height': img.shape[0],
                     'img_width': img.shape[1],
                     'box_name': img_name,
-                    'box_path': save_path_box,
-                    'box_height': box_img.shape[0],
-                    'box_width': box_img.shape[1],
+                    'box_path_src': save_path_box_src,
+                    'box_path_seg': save_path_box_seg,
+                    'box_height': box_src.shape[0],
+                    'box_width': box_src.shape[1],
                     'date': date,
                     'time': time,
                     'body_part': body_part,
