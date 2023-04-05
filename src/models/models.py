@@ -1,12 +1,16 @@
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
+import cv2
 import numpy as np
 import pandas as pd
+import skimage
 import torch
 from cpuinfo import get_cpu_info
 from mmdet.apis import inference_detector, init_detector
+from sklearn.cluster import MeanShift
+from sklearn.preprocessing import MinMaxScaler, PowerTransformer, RobustScaler, StandardScaler
 
 from src.data.utils import get_file_list
 
@@ -123,3 +127,119 @@ class AblationDetector:
         df.reset_index(drop=True, inplace=True)
 
         return df
+
+
+class AblationSegmenter:
+    """A class used during the inference of the segmentation pipeline."""
+
+    def __init__(
+        self,
+        model_name: str,
+    ):
+
+        self.model_name = model_name
+
+        if model_name == 'mean_shift':
+            self.model = MeanShift()
+
+    def __call__(
+        self,
+        img: np.ndarray,
+        box: List[int],
+        box_offset: Tuple[int, int],
+        norm_type: str = 'standard',
+    ) -> Tuple[np.ndarray, np.ndarray]:
+
+        # Crop the image and extract the box
+        img_crop = self._crop_image(
+            img=img,
+            box=box,
+            box_offset=box_offset,
+        )
+
+        # Reshape the box
+        img_res = img_crop.reshape(
+            img_crop.shape[0] * img_crop.shape[1],
+            img_crop.shape[2],
+        )
+
+        # Normalization
+        img_norm = self._normalize(
+            data=img_res,
+            norm_type=norm_type,
+        )
+
+        # Clustering
+        mask_ = self.model.fit_predict(img_norm)
+
+        # Resize back to the original size
+        mask = mask_.reshape(img_crop.shape[0], img_crop.shape[1])
+
+        return img_crop, mask
+
+    @staticmethod
+    def label_to_rgb(
+        mask_index: np.ndarray,
+    ) -> np.ndarray:
+        mask_rgb = skimage.color.label2rgb(mask_index)
+        mask_rgb = (mask_rgb * 255).astype(np.uint8)
+        return mask_rgb
+
+    @staticmethod
+    def _crop_image(
+        img: np.ndarray,
+        box: List[int],
+        box_offset: Tuple[int, int],
+    ) -> np.ndarray:
+
+        x1, y1, x2, y2 = box
+        offset_x, offset_y = box_offset
+        img_box = img[
+            y1 - offset_y : y2 + offset_y,
+            x1 - offset_x : x2 + offset_x,
+        ]
+
+        return img_box
+
+    @staticmethod
+    def _normalize(
+        data: np.ndarray,
+        norm_type: str = 'standard',
+    ) -> np.ndarray:
+
+        # Preprocess features
+        if norm_type == 'minmax':
+            scaler = MinMaxScaler().fit(data)
+        elif norm_type == 'standard':
+            scaler = StandardScaler().fit(data)
+        elif norm_type == 'robust':
+            scaler = RobustScaler().fit(data)
+        elif norm_type == 'power':
+            scaler = PowerTransformer().fit(data)
+
+        data = scaler.transform(data) if norm_type != 'raw' else data
+
+        return data
+
+
+if __name__ == '__main__':
+
+    model_name = 'mean_shift'
+    box = [659, 553, 708, 601]  # x1, y1, x2, y2
+    box_offset = (0, 0)  # [horizontal, vertical]
+    norm_type = 'standard'
+
+    img_path = 'data/raw_converted/abs/30_08_2019_test_01_liver/10_00_39_T6=110/001.png'
+    img = cv2.imread(img_path)
+
+    a = AblationSegmenter(model_name)
+    box_img, box_mask = a(
+        img=img,
+        box=box,
+        box_offset=box_offset,
+        norm_type=norm_type,
+    )
+    unique_clusters = list(np.unique(box_mask))
+    num_clusters = len(unique_clusters)
+    box_mask_rgb = a.label_to_rgb(box_mask)
+    print('Complete')

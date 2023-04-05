@@ -166,3 +166,6 @@ temp/
 
 # MLFlow
 /mlruns/
+
+# Inference experiments
+/experiments/
