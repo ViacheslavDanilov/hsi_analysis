@@ -228,7 +228,7 @@ def main(cfg: DictConfig) -> None:
     )
     result: List[Dict] = sum(result_, [])
     df = pd.DataFrame(result)
-    save_path = os.path.join(cfg.save_dir, cfg.model_name, 'metadata.xlsx')
+    save_path = os.path.join(cfg.save_dir, cfg.model_name, f'metadata_{cfg.modality}.xlsx')
     df.index += 1
     df.to_excel(
         save_path,
