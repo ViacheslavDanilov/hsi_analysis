@@ -236,7 +236,7 @@ def main(cfg: DictConfig) -> None:
 
     # Processing of HSI files
     result = []
-    for hsi_path in hsi_paths:
+    for hsi_path in tqdm(hsi_paths, desc='HSI processing'):
         hsi_path = os.path.normpath(hsi_path)
         print(f'\nHSI to process.......: {hsi_path}')
         log.info(f'HSI to process.......: {hsi_path}')
