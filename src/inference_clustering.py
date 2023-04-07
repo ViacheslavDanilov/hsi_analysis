@@ -1,15 +1,13 @@
 import logging
 import os
-from functools import partial
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 import cv2
 import hydra
 import imutils
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
 from omegaconf import DictConfig, OmegaConf
 from PIL import Image, ImageFilter
 from tqdm import tqdm
@@ -94,7 +92,8 @@ def segment_hsi(
     box_ = box_[box_[['x1', 'y1', 'x2', 'y2']].notnull().all(1)]
 
     if len(box_) == 0:
-        pass
+        print('Status...............: Skipped')
+        log.info('Status...............: Skipped')
     else:
         box = [
             int(np.mean(box_.x1)),
@@ -127,7 +126,7 @@ def segment_hsi(
         os.makedirs(save_dir_box_src, exist_ok=True)
         os.makedirs(save_dir_box_seg, exist_ok=True)
 
-        for idx in tqdm(range(hsi.shape[2]), leave=True):
+        for idx in tqdm(range(hsi.shape[2]), leave=True, desc='Wavelength processing'):
 
             img = hsi[:, :, idx]
 
@@ -203,6 +202,8 @@ def segment_hsi(
                     'num_clusters': num_clusters,
                 },
             )
+        print('Status...............: Processed')
+        log.info('Status...............: Processed')
 
     return metadata
 
@@ -228,27 +229,30 @@ def main(cfg: DictConfig) -> None:
         include_template='',
         ext_list='.dat',
     )
-    log.info(f'HSI found..........: {len(hsi_paths)}')
+    log.info(f'HSI found............: {len(hsi_paths)}')
 
     # Read metadata
-    df = pd.read_excel(cfg.metadata_path)
+    df_meta = pd.read_excel(cfg.metadata_path)
 
-    # Multiprocessing of HSI files
-    processing_func = partial(
-        segment_hsi,
-        meta=df,
-        modality=cfg.modality,
-        model_name=cfg.model_name,
-        norm_type=cfg.norm_type,
-        box_offset=tuple(cfg.box_offset),
-        src_size=tuple(cfg.src_size),
-        apply_filtering=cfg.apply_filtering,
-        save_dir=cfg.save_dir,
-    )
-    result_ = Parallel(n_jobs=-1, prefer='threads')(
-        delayed(processing_func)(group) for group in tqdm(hsi_paths, desc='Clustering', unit=' HSI')
-    )
-    result: List[Dict] = sum(result_, [])
+    # Processing of HSI files
+    result = []
+    for hsi_path in hsi_paths:
+        print(f'\nHSI to process.......: {hsi_path}')
+        log.info(f'HSI to process.......: {hsi_path}')
+        result_ = segment_hsi(
+            hsi_path=hsi_path,
+            meta=df_meta,
+            modality=cfg.modality,
+            model_name=cfg.model_name,
+            norm_type=cfg.norm_type,
+            box_offset=tuple(cfg.box_offset),
+            src_size=tuple(cfg.src_size),
+            apply_filtering=cfg.apply_filtering,
+            save_dir=cfg.save_dir,
+        )
+        result.append(result_)
+    result = sum(result, [])
+
     df = pd.DataFrame(result)
     save_path = os.path.join(cfg.save_dir, cfg.model_name, f'metadata_{cfg.modality}.xlsx')
     df.index += 1

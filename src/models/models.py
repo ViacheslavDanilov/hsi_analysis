@@ -140,7 +140,7 @@ class AblationSegmenter:
         self.model_name = model_name
 
         if model_name == 'mean_shift':
-            self.model = MeanShift()
+            self.model = MeanShift(n_jobs=-1)
 
     def __call__(
         self,
