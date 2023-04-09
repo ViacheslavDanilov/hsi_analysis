@@ -170,7 +170,10 @@ class AblationSegmenter:
         )
 
         # Clustering
-        mask_ = self.model.fit_predict(img_norm)
+        try:
+            mask_ = self.model.fit_predict(img_norm)
+        except ValueError:
+            mask_ = np.zeros(shape=img_norm.shape[0], dtype=np.int64)
 
         # Resize back to the original size
         mask = mask_.reshape(img_crop.shape[0], img_crop.shape[1])
