@@ -48,6 +48,29 @@ pre-commit install
 
 ## Data
 
+In order to download the data do the following:
+
+1. Clone the repository
+``` bash
+git clone https://github.com/ViacheslavDanilov/hsi_analysis.git
+```
+
+2. Install DVC
+``` bash
+pip install dvc[gdrive]==2.41.1
+```
+
+3. Download dataset using DVC
+
+|       Dataset        |                                                                                       Description                                                                                        | Size, Gb |                Command                 |
+|:--------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------:|:--------------------------------------:|
+|         Raw          |                                                                        Dataset inclduing 304 hyperspectral images                                                                        |   34.4   |    ```dvc pull dvc/data/raw.dvc```     |
+| Supervisely (input)  |                                                    Dataset used for labeling on the [Sueprvsiely](https://supervisely.com/) platform                                                     |   7.5    | ```dvc pull dvc/data/sly_input.dvc```  |
+| Supervisely (output) | Dataset that represents the labeled dataset for object detection in a [Supervisely format](https://docs.supervise.ly/data-organization/00_ann_format_navi/04_supervisely_format_objects) |   2.6    | ```dvc pull dvc/data/sly_output.dvc``` |
+|       Interim        |                                                                 Dataset used for debugging and explanatory data analysis                                                                 |   2.6    |  ```dvc pull dvc/data/interim.dvc```   |
+|         COCO         |                                        Dataset in [COCO format](https://cocodataset.org/#format-data) and used to train object recognition models                                        |   10.5   |    ```dvc pull dvc/data/coco.dvc```    |
+
+
 <table style="width:100%">
     <caption>
         Table 1. Example of hyperspectral images taken at different temperatures
