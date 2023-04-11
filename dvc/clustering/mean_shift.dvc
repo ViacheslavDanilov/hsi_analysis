@@ -1,0 +1,5 @@
+wdir: ../../experiments/clustering
+outs:
+- md5: 7299edede190165052245a3a3785a491
+  size: 19559788404
+  path: mean_shift.zip
