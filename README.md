@@ -48,22 +48,18 @@ pre-commit install
 
 ## Data
 
-<p align="center">
-Table 1. Example of hyperspectral images taken at different wavelengths
-</p>
 
-|                                              Absorbance                                               |                                                  HSV                                                  |                                              Reflectance                                              |
-|:-----------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------:|
-| https://user-images.githubusercontent.com/32963687/231411783-c27c9b29-bfc0-4795-a804-a4b4ee17e15f.mp4 | https://user-images.githubusercontent.com/32963687/231411858-5f4a7f82-6137-451e-8ed0-1d285618408f.mp4 | https://user-images.githubusercontent.com/32963687/231411922-3bf00316-76c9-40da-99fc-c27227acbfec.mp4 |
+<p align="right">Table 1. Example of hyperspectral images taken at different wavelengths</p>
 
+|                                                     Absorbance                                                      |                                                         HSV                                                         |                                                     Reflectance                                                     |
+|:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------:|
+| <video src="https://user-images.githubusercontent.com/32963687/231411783-c27c9b29-bfc0-4795-a804-a4b4ee17e15f.mp4"> | <video src="https://user-images.githubusercontent.com/32963687/231411858-5f4a7f82-6137-451e-8ed0-1d285618408f.mp4"> | <video src="https://user-images.githubusercontent.com/32963687/231411922-3bf00316-76c9-40da-99fc-c27227acbfec.mp4"> |
 
-
+&nbsp;
 <table style="width:100%">
-    <caption>
-        Table 2. Ablated area at different temperatures
-    </caption>
+        <p align="right">Table 2. Ablated area at different temperatures<p>
     <tr>
-        <th valign="middle" align="center">Temperature </th>
+        <th valign="middle" align="center">T </th>
         <th valign="middle" align="center">Absorbance</th>
         <th valign="middle" align="center">HSV</th>
         <th valign="middle" align="center">Reflectance</th>
