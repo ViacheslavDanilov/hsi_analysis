@@ -1,5 +1,5 @@
 # Segmentation and analysis of hyperspectral images
-This repository is dedicated to the segmentation of [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging) during experimental animal surgery.
+This repository is dedicated to the segmentation of [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging) during experimental animal surgery, where a variety of tasks were performed to process and analyze the hyperspectral data collected at the [Institute of Image Guided Surgery](https://www.ihu-strasbourg.eu/en/) in Strasbourg.
 
 ## Requirements
 
