@@ -60,7 +60,7 @@ Table 1. Example of hyperspectral images taken at different wavelengths
 
 <table style="width:100%">
     <caption>
-        Table 2. Example of hyperspectral images taken at different temperatures
+        Table 2. Ablated area at different temperatures
     </caption>
     <tr>
         <th valign="middle" align="center">Temperature </th>
@@ -70,21 +70,21 @@ Table 1. Example of hyperspectral images taken at different wavelengths
     </tr>
     <tr>
         <td valign="middle" align="center">35</td>
-        <td valign="middle" align="center"><img src="media/abs_start.png"  alt="Absorbance (start)" width="225"></td>
-        <td valign="middle" align="center"><img src="media/hsv_start.png" alt="HSV (start)" width="225"></td>
-        <td valign="middle" align="center"><img src="media/ref_start.png" alt="Reflectance (start)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/abs_35.png"  alt="Absorbance (start)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/hsv_35.png" alt="HSV (start)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/ref_35.png" alt="Reflectance (start)" width="225"></td>
     </tr>
     <tr>
         <td valign="middle" align="center">60</td>
-        <td valign="middle" align="center"><img src="media/abs_mid.png"  alt="Absorbance (mid)" width="225"></td>
-        <td valign="middle" align="center"><img src="media/hsv_mid.png" alt="HSV (mid)" width="225"></td>
-        <td valign="middle" align="center"><img src="media/ref_mid.png" alt="Reflectance (mid)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/abs_70.png"  alt="Absorbance (mid)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/hsv_70.png" alt="HSV (mid)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/ref_70.png" alt="Reflectance (mid)" width="225"></td>
     </tr>
     <tr>
         <td valign="middle" align="center">110</td>
-        <td valign="middle" align="center"><img src="media/abs_end.png"  alt="Absorbance (end)" width="225"></td>
-        <td valign="middle" align="center"><img src="media/hsv_end.png" alt="HSV (end)" width="225"></td>
-        <td valign="middle" align="center"><img src="media/ref_end.png" alt="Reflectance (end)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/abs_110.png"  alt="Absorbance (end)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/hsv_110.png" alt="HSV (end)" width="225"></td>
+        <td valign="middle" align="center"><img src="media/ref_110.png" alt="Reflectance (end)" width="225"></td>
     </tr>
 </table>
 
