@@ -1,0 +1,6 @@
+wdir: ../../models/ablation_detection
+outs:
+- md5: 5265cbb6d95d2e2e0c96d23cf37d2ffe.dir
+  size: 332165224
+  nfiles: 4
+  path: FasterRCNN_pca_ref
