@@ -167,5 +167,8 @@ temp/
 # MLFlow
 /mlruns/
 
+# Models
+models/ablation_detection
+
 # Inference experiments
 /experiments/
