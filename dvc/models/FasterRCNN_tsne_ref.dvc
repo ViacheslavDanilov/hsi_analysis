@@ -1,0 +1,6 @@
+wdir: ../../models/ablation_detection
+outs:
+- md5: 05c7303491f70d4fd1035bc74e489a25.dir
+  size: 332164867
+  nfiles: 4
+  path: FasterRCNN_tsne_ref

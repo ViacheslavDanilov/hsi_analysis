@@ -235,8 +235,8 @@ if __name__ == '__main__':
     img_path = 'data/raw_converted/abs/30_08_2019_test_01_liver/10_00_39_T6=110/001.png'
     img = cv2.imread(img_path)
 
-    a = AblationSegmenter(model_name)
-    box_img, box_mask = a(
+    segmenter = AblationSegmenter(model_name)
+    box_img, box_mask = segmenter(
         img=img,
         box=box,
         box_offset=box_offset,
@@ -244,5 +244,5 @@ if __name__ == '__main__':
     )
     unique_clusters = list(np.unique(box_mask))
     num_clusters = len(unique_clusters)
-    box_mask_rgb = a.label_to_rgb(box_mask)
+    box_mask_rgb = segmenter.label_to_rgb(box_mask)
     print('Complete')

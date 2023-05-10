@@ -2,8 +2,8 @@ defaults:
 - main
 - _self_
 
-data_dir: data/demo/source
-model_dir: models/ablation_detection/FasterRCNN_221950_100323
+data_dir: data/demo/images
+model_dir: models/ablation_detection/FasterRCNN_pca_ref
 conf_threshold: 0.01
 device: auto
 save_dir: data/demo
