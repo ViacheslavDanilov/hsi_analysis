@@ -62,7 +62,6 @@ def resize_volume(
     output_size: Tuple[int, int, int],
     interpolation: int = cv2.INTER_LINEAR,
 ) -> np.ndarray:
-
     output_height, output_width, output_depth = output_size
     source_height, source_width, source_depth = input_image.shape
 
@@ -218,7 +217,6 @@ def extract_body_part(
 def extract_temperature(
     path: str,
 ) -> Tuple[int, str]:
-
     if os.path.isfile(path):
         series_name = extract_series_name(path)
     else:

@@ -24,7 +24,6 @@ class AblationDetector:
         conf_threshold: float = 0.01,
         device: str = 'auto',
     ):
-
         # Get config path
         config_list = get_file_list(
             src_dirs=model_dir,
@@ -82,7 +81,6 @@ class AblationDetector:
         img_paths: List[str],
         detections: List[List[np.ndarray]],
     ) -> pd.DataFrame:
-
         columns = [
             'img_path',
             'img_name',
@@ -100,7 +98,6 @@ class AblationDetector:
         # Iterate over images
         df = pd.DataFrame(columns=columns)
         for image_idx, (img_path, detections_image) in enumerate(zip(img_paths, detections)):
-
             # Iterate over class detections
             for class_idx, detections_class in enumerate(detections_image):
                 if detections_class.size == 0:
@@ -136,7 +133,6 @@ class AblationSegmenter:
         self,
         model_name: str,
     ):
-
         self.model_name = model_name
 
         if model_name == 'mean_shift':
@@ -149,7 +145,6 @@ class AblationSegmenter:
         box_offset: Tuple[int, int],
         norm_type: str = 'standard',
     ) -> Tuple[np.ndarray, np.ndarray]:
-
         # Crop the image and extract the box
         img_crop = self._crop_image(
             img=img,
@@ -194,7 +189,6 @@ class AblationSegmenter:
         box: List[int],
         box_offset: Tuple[int, int],
     ) -> np.ndarray:
-
         x1, y1, x2, y2 = box
         offset_x, offset_y = box_offset
         img_box = img[
@@ -209,7 +203,6 @@ class AblationSegmenter:
         data: np.ndarray,
         norm_type: str = 'standard',
     ) -> np.ndarray:
-
         # Preprocess features
         if norm_type == 'minmax':
             scaler = MinMaxScaler().fit(data)
@@ -226,7 +219,6 @@ class AblationSegmenter:
 
 
 if __name__ == '__main__':
-
     model_name = 'mean_shift'
     box = [659, 553, 708, 601]  # x1, y1, x2, y2
     box_offset = (0, 0)  # [horizontal, vertical]

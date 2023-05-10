@@ -15,18 +15,6 @@ log.setLevel(logging.INFO)
     version_base=None,
 )
 def main(cfg: DictConfig) -> None:
-    """Visualize a COCO dataset to verify its correctness.
-
-    Args:
-        cfg.dataset_dir: a directory with COCO data, including training and test subsets
-        cfg.subset: a name of subset i.e. train or test
-        cfg.dataset_name: a name for the dataset
-        cfg.max_samples: a maximum number of samples to import. By default, all samples are imported
-        cfg.shuffle: whether to randomly shuffle the order in which the samples are imported
-        cfg.seed: a random seed to use when shuffling
-    Returns:
-        None
-    """
     log.info(f'Config:\n\n{OmegaConf.to_yaml(cfg)}')
 
     subset_dir = os.path.join(cfg.dataset_dir, cfg.subset)

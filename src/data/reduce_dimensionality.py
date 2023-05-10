@@ -38,7 +38,6 @@ def reduce_dimensionality(
     reduction_method: str = 'pca',
     num_components: int = 3,
 ) -> Tuple[np.ndarray, List[float]]:
-
     if reduction_method == 'tsne':
         tsne = TSNE(
             n_components=num_components,
@@ -72,7 +71,6 @@ def process_hsi(
     apply_equalization: bool = False,
     output_size: Tuple[int, int] = (744, 1000),
 ) -> List:
-
     # Extract meta information
     study_name = extract_study_name(path=hsi_path)
     series_name = extract_series_name(path=hsi_path)
@@ -119,7 +117,6 @@ def process_hsi(
     os.makedirs(save_dir, exist_ok=True)
     metadata = []
     for idx in range(num_components):
-
         img = hsi_reduced[:, idx]
         img = img.reshape(hsi_height, hsi_width)
         img_name = f'{series_name}_{idx+1:03d}.png'

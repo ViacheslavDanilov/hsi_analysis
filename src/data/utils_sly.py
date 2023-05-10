@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 from pathlib import Path
 from typing import List, Optional
 
@@ -18,9 +18,10 @@ def read_sly_project(
     include_dirs: Optional[List[str]] = None,
     exclude_dirs: Optional[List[str]] = None,
 ) -> pd.DataFrame:
-
     logging.info(f'Dataset dir..........: {project_dir}')
-    assert os.path.exists(project_dir) and os.path.isdir(project_dir), 'Wrong project dir: {}'.format(project_dir)
+    assert os.path.exists(project_dir) and os.path.isdir(
+        project_dir,
+    ), 'Wrong project dir: {}'.format(project_dir)
     try:
         project = sly.VideoProject(
             directory=project_dir,
@@ -65,7 +66,7 @@ def read_sly_project(
             'series': series_list,
             f'{project_type}_path': file_paths,
             'ann_path': ann_paths,
-        }
+        },
     )
     df.sort_values(['study', 'series'], inplace=True)
     df.reset_index(drop=True, inplace=True)

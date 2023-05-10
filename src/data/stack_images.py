@@ -24,7 +24,6 @@ def stack_images(
     img_paths: Tuple[str, ...],
     output_size: Tuple[int, int] = (744, 1000),
 ) -> np.ndarray:
-
     # Read images and stack them together
     img_out = np.zeros([output_size[0], 1, 3], dtype=np.uint8)
     for img_path in img_paths:
@@ -48,7 +47,6 @@ def process_group(
     output_size: Tuple[int, int] = (744, 1000),
     fps: int = 15,
 ) -> None:
-
     (study_name, series_name), df = series_group
 
     if output_type == 'image':
@@ -71,7 +69,6 @@ def process_group(
     img_groups = df.groupby('img_name')
 
     for idx, (img_name, df_img) in enumerate(img_groups):
-
         assert idx + 1 == int(Path(img_name).stem), 'Wavelength and image name mismatch'
 
         # Stack images
@@ -123,7 +120,6 @@ def main(cfg: DictConfig) -> None:
     # Collect images across all dirs
     img_dirs = []
     for src_dir in cfg.src_dirs:
-
         study_dirs = get_dir_list(
             data_dir=src_dir,
             include_dirs=cfg.include_dirs,

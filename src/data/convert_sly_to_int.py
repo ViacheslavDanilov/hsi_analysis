@@ -21,7 +21,6 @@ def process_dataset(
     dataset: sly.Dataset,
     meta: sly.ProjectMeta,
 ) -> pd.DataFrame:
-
     df = pd.DataFrame(
         columns=[
             'img_path',
