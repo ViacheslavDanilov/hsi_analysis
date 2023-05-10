@@ -61,3 +61,9 @@ repos:
   hooks:
   - id: mypy
     args: [--config-file, pyproject.toml]
+
+# exclude directories from pre-commit check
+exclude: |
+  (?x)(
+      ^src/models/mmdetection/
+  )
