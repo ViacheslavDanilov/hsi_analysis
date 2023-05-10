@@ -31,7 +31,6 @@ log.setLevel(logging.INFO)
 def filter_mask(
     mask: np.ndarray,
 ) -> np.ndarray:
-
     unique_clusters = list(np.unique(mask))
     unique_clusters.remove(0)
 
@@ -69,7 +68,6 @@ def segment_hsi(
     apply_filtering: bool = True,
     src_size: Tuple[int, int] = (744, 1000),
 ) -> List:
-
     # Read HSI file
     hsi = read_hsi(
         path=hsi_path,
@@ -127,7 +125,6 @@ def segment_hsi(
         os.makedirs(save_dir_box_seg, exist_ok=True)
 
         for idx in tqdm(range(hsi.shape[2]), leave=True, desc='Wavelength processing'):
-
             img = hsi[:, :, idx]
 
             # Process source image

@@ -24,7 +24,6 @@ def filter_dirs(
     abs: bool = True,
     ref: bool = False,
 ) -> List[str]:
-
     dir_list = glob(src_dir + '/*/', recursive=True)
 
     # Filter reduction directories
@@ -140,7 +139,6 @@ def prepare_coco_subsets(
     # Process images and annotations
     subset_list = list(df['split'].unique())
     for subset in subset_list:
-
         df_subset = df[df['split'] == subset]
         imgs_coco = []
         anns_coco = []
@@ -155,7 +153,6 @@ def prepare_coco_subsets(
             desc=f'{subset.capitalize()} subset processing',
             unit=' image',
         ):
-
             img_data = get_img_info(
                 img_path=src_path,
                 img_id=img_id,

@@ -26,10 +26,8 @@ def get_ann_info(
     ann_id: int,
     box_extension: dict,
 ) -> Tuple[List[Any], int]:
-
     ann_data = []
     for idx, row in df.iterrows():
-
         class_name = row['class']
         if class_name != class_name:  # Check if class_name is NaN
             pass

@@ -27,7 +27,6 @@ log.setLevel(logging.INFO)
 def process_hsi(
     hsi_path: str,
 ) -> dict:
-
     hsi = read_hsi(hsi_path)
     study_name = extract_study_name(path=hsi_path)
     series_name = extract_series_name(path=hsi_path)

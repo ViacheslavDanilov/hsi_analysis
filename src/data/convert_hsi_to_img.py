@@ -40,7 +40,6 @@ def process_hsi(
     output_size: Tuple[int, int] = (744, 1000),
     fps: int = 15,
 ) -> List:
-
     assert output_type == 'image' or output_type == 'video', f'Incorrect output_type: {output_type}'
 
     # Read HSI file and extract additional information
@@ -77,7 +76,6 @@ def process_hsi(
     # Process HSI in an image-by-image fashion
     metadata = []
     for idx in range(hsi.shape[2]):
-
         img = hsi[:, :, idx]
         img_name = f'{idx+1:03d}.png'
         img_path = os.path.join(output_dir, img_name)
