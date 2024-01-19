@@ -87,6 +87,14 @@ pre-commit install
 
 ## Data Access
 
+All essential components of the study, including the curated dataset and trained models, have been made publicly available:
+- Dataset: https://zenodo.org/doi/10.5281/zenodo.10444212.
+- Models: https://zenodo.org/doi/10.5281/zenodo.10444269.
+
+Alternatively, you may download the dataset, models, and study results using the DVC commands listed below.
+
+**NOTE:** As the data storage is organized through Google Drive, errors may occur when downloading study artifacts due to insufficient permissions to the data repository. If you encounter problems with the dataset or models, or if you would like to use the data presented, please contact [Viacheslav Danilov](https://github.com/ViacheslavDanilov) at <a href="mailto:viacheslav.v.danilov@gmail.com">viacheslav.v.danilov@gmail.com</a> or [Paola Saccomandi](https://mecc.polimi.it/en/research/faculty/prof-paola-saccomandi) at <a href="mailto:paola.saccomandi@polimi.it">paola.saccomandi@polimi.it</a> to request access to the data repository. Please note that access is only granted upon request.
+
 1. To download the data, clone the repository:
 ``` bash
 git clone https://github.com/ViacheslavDanilov/hsi_analysis.git
