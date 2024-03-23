@@ -71,7 +71,15 @@ The workflow proposed in this study, presented in Figure 1, consists of several 
 <a name="results"></a>
 ## 📈 Results
 
-**TODO: complete**
+The segmentation of the ablation area in hyperspectral images was meticulously examined through various clustering algorithms (Figure 2). While DBSCAN, OPTICS, and affinity propagation resulted in oversimplification, k-means, BIRCH, agglomerative clustering, spectral clustering, and GMM showcased superior performance, albeit requiring manual cluster input. Notably, Mean Shift emerged as a standout performer, offering high-quality segmentation without manual cluster definition, thanks to its adaptability, autonomous cluster center determination, and robustness to noise. Our analysis revealed significant variation in cluster numbers across reflectance and absorbance modalities, influenced by tissue-specific spectral characteristics and temperature-dependent variations, underscoring the necessity for adaptable segmentation approaches tailored to spectral complexities.
+
+<p align="center">
+  <img width="100%" height="100%" src="media/clustering.png" alt="Segmentation results">
+</p>
+
+<p align="left">
+    Figure 2. Comparison of ablation segmentation performed with different unsupervised algorithms. The top row represents the input data for clustering algorithms.
+</p>
 
 <a name="conclusion"></a>
 ## 🏁 Conclusion
