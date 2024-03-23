@@ -1,4 +1,7 @@
-# Segmentation and analysis of hyperspectral images
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444212.svg)](https://doi.org/10.5281/zenodo.10444212)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444269.svg)](https://doi.org/10.5281/zenodo.10444269)
+
+# Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging
 This repository is dedicated to the segmentation of [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging) during experimental animal surgery, where a variety of tasks were performed to process and analyze the hyperspectral data collected at the [Institute of Image Guided Surgery](https://www.ihu-strasbourg.eu/en/) in Strasbourg.
 
 ## Requirements
