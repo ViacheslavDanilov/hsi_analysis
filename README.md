@@ -1,5 +1,6 @@
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444212.svg)](https://doi.org/10.5281/zenodo.10444212)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444269.svg)](https://doi.org/10.5281/zenodo.10444269)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444212.svg)](https://zenodo.org/doi/10.5281/zenodo.10444212)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444269.svg)](https://zenodo.org/doi/10.5281/zenodo.10444269)
+[![DOI](http://img.shields.io/badge/DOI-TO.BE.UPDATED.SOON-B31B1B)](https://www.sciencedirect.com/journal/computers-in-biology-and-medicine)
 
 # Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging
 
@@ -177,10 +178,8 @@ pip install dvc==2.55.0 dvc-gdrive==2.19.2
 | [Faster R-CNN (t-SNE + Ref)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/FasterRCNN_tsne_ref.dvc) |       Faster R-CNN model trained on the t-SNE + Reflectance dataset        |   0.33   | ```dvc pull dvc/models/FasterRCNN_tsne_ref.dvc``` |
 
 <a name="how-to-cite"></a>
-## How to Cite
+## 🖊️ How to Cite
 
-#### THIS SECTION WILL BE UPDATED SOON
+Please cite [our paper](https://www.sciencedirect.com/journal/computers-in-biology-and-medicine) if you found our data, methods, or results helpful for your research:
 
-Please cite our paper if you found our data, methods, or results helpful for your research:
-
-Danilov, V.V., De Landro, M., Felli, E., Barberio, M., Diana, M., & Saccomandi, P. (Year). Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging. [Journal/Conference Name], [Volume(Issue)], [Page Numbers]. DOI: [DOI]
+> Danilov V., De Landro M., Felli E., Barberio M., Diana M., Saccomandi P. (**2024**). _Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging_. **Computers in Biology and Medicine**.
