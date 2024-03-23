@@ -4,10 +4,14 @@
 # Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging
 This repository is dedicated to the segmentation of [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging) during experimental animal surgery, where a variety of tasks were performed to process and analyze the hyperspectral data collected at the [Institute of Image Guided Surgery](https://www.ihu-strasbourg.eu/en/) in Strasbourg.
 
-## Requirements
+## 💻 Requirements
 
-- Linux or macOS (Windows has not been officially tested)
+- Operating System
+  - [x] macOS
+  - [x] Linux
+  - [x] Windows (limited testing carried out)
 - Python 3.8.x
+- Required core packages: [dev.txt](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/requirements/dev.txt)
 
 ## Installation
 
