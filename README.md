@@ -13,6 +13,7 @@
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Data Access](#data-access)
+- [How to Cite](#how-to-access)
 
 <a name="purpose"></a>
 ## 🎯 Purpose
@@ -174,3 +175,12 @@ pip install dvc==2.55.0 dvc-gdrive==2.19.2
 |  [Faster R-CNN (PCA + Ref)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/FasterRCNN_pca_ref.dvc)   |        Faster R-CNN model trained on the PCA + Reflectance dataset         |   0.33   | ```dvc pull dvc/models/FasterRCNN_pca_ref.dvc```  |
 | [Faster R-CNN (t-SNE + Abs)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/FasterRCNN_tsne_abs.dvc) |        Faster R-CNN model trained on the t-SNE + Absorbance dataset        |   0.33   | ```dvc pull dvc/models/FasterRCNN_tsne_abs.dvc``` |
 | [Faster R-CNN (t-SNE + Ref)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/FasterRCNN_tsne_ref.dvc) |       Faster R-CNN model trained on the t-SNE + Reflectance dataset        |   0.33   | ```dvc pull dvc/models/FasterRCNN_tsne_ref.dvc``` |
+
+<a name="how-to-cite"></a>
+## How to Cite
+
+#### THIS SECTION WILL BE UPDATED SOON
+
+Please cite our paper if you found our data, methods, or results helpful for your research:
+
+Danilov, V.V., De Landro, M., Felli, E., Barberio, M., Diana, M., & Saccomandi, P. (Year). Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging. [Journal/Conference Name], [Volume(Issue)], [Page Numbers]. DOI: [DOI]
