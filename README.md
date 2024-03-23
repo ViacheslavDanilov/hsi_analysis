@@ -4,7 +4,7 @@
 # Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging
 
 <a name="table-of-contents"></a>
-## 📖 Table of Contents
+## 📖 Contents
 - [Purpose](#purpose)
 - [Data](#data)
 - [Methods](#methods)
@@ -13,7 +13,7 @@
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Data Access](#data-access)
-- [How to Cite](#how-to-access)
+- [How to Cite](#how-to-cite)
 
 <a name="purpose"></a>
 ## 🎯 Purpose
