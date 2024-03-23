@@ -2,59 +2,24 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444269.svg)](https://doi.org/10.5281/zenodo.10444269)
 
 # Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging
-This repository is dedicated to the segmentation of [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging) during experimental animal surgery, where a variety of tasks were performed to process and analyze the hyperspectral data collected at the [Institute of Image Guided Surgery](https://www.ihu-strasbourg.eu/en/) in Strasbourg.
 
-## 💻 Requirements
+<a name="table-of-contents"></a>
+## 📖 Table of Contents
+- [Purpose](#purpose)
+- [Data](#data)
+- [Methods](#methods)
+- [Results](#results)
+- [Conclusion](#conclusion)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Data Access](#data-access)
 
-- Operating System
-  - [x] macOS
-  - [x] Linux
-  - [x] Windows (limited testing carried out)
-- Python 3.8.x
-- Required core packages: [dev.txt](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/requirements/dev.txt)
+<a name="purpose"></a>
+## 🎯 Purpose
+Our study aims to advance the application of dimensionality reduction, object detection, and clustering in Hyperspectral Imaging (HSI), specifically for tissue ablation monitoring. We evaluate different modalities for ablation detection and segmentation in [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging), focusing on thermal effects induced by laser ablation treatment in vivo.
 
-## Installation
-
-Step 1: Download and install Miniconda
-``` bash
-wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh
-chmod +x Miniconda3-latest-Linux-x86_64.sh
-./Miniconda3-latest-Linux-x86_64.sh
-```
-
-Step 2: Install FFmpeg and verify that the installation is correct
-
-- Linux
-``` bash
-sudo apt update
-sudo apt upgrade
-sudo apt install ffmpeg
-ffmpeg -version
-```
-
-- macOS
-``` bash
-brew update
-brew upgrade
-brew install ffmpeg
-ffmpeg
-```
-
-Step 3: Clone the repository, create a conda environment, and install the requirements for the repository
-``` bash
-git clone https://github.com/ViacheslavDanilov/oct_segmentation.git
-cd oct_segmentation
-chmod +x create_env.sh
-source create_env.sh
-```
-
-Step 4: Initialize git hooks using the pre-commit framework
-``` bash
-pre-commit install
-```
-
-## Data
-
+<a name="data"></a>
+## 📂 Data
 
 <p align="right">Table 1. Example of hyperspectral images taken at different wavelengths</p>
 
@@ -91,8 +56,71 @@ pre-commit install
     </tr>
 </table>
 
+<a name="methods"></a>
+## 🔬 Methods
+The workflow proposed in this study, presented in Figure 1, consists of several key steps to extract valuable information from hyperspectral data in the laser-mediated thermal treatment scenario. First, dimensionality reduction is applied to reduce the high-dimensional data to a manageable size. Next, a supervised learning technique based on neural networks is used to detect the ablation area, i.e., the region of the image where tissue has been treated by laser irradiation. Finally, an unsupervised learning technique based on clustering is used to segment the spectral signature of the ablation area, allowing the identification of specific tissue types or classes of thermal damage. The proposed workflow provides a comprehensive approach to the analysis of hyperspectral data and has the potential to improve the accuracy and efficiency of diseased tissue analysis in the thermal treatment scenario.
 
-## Data Access
+<p align="center">
+  <img width="100%" height="100%" src="media/workflow.png" alt="Proposed workflow">
+</p>
+
+<p align="left">
+    Figure 1. Proposed workflow for hyperspectral image processing and analysis. The workflow consists of three main components: dimensionality reduction, ablation area detection using supervised learning, and spectral signature segmentation based on unsupervised learning.
+</p>
+
+<a name="results"></a>
+## 📈 Results
+
+**TODO: complete**
+
+<a name="requirements"></a>
+## 💻 Requirements
+
+- Operating System
+  - [x] macOS
+  - [x] Linux
+  - [x] Windows (limited testing carried out)
+- Python 3.8.x
+- Required core packages: [dev.txt](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/requirements/dev.txt)
+
+<a name="installation"></a>
+## ⚙ Installation
+
+Step 1: Download and install Miniconda
+``` bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh
+chmod +x Miniconda3-latest-Linux-x86_64.sh
+./Miniconda3-latest-Linux-x86_64.sh
+```
+
+Step 2: Install FFmpeg and verify that the installation is correct
+
+- Linux
+``` bash
+sudo apt update
+sudo apt upgrade
+sudo apt install ffmpeg
+ffmpeg -version
+```
+
+- macOS
+``` bash
+brew update
+brew upgrade
+brew install ffmpeg
+ffmpeg
+```
+
+Step 3: Clone the repository, create a conda environment, and install the requirements for the repository
+``` bash
+git clone https://github.com/ViacheslavDanilov/oct_segmentation.git
+cd oct_segmentation
+chmod +x create_env.sh
+source create_env.sh
+```
+
+<a name="data-access"></a>
+## 📂 Data Access
 
 All essential components of the study, including the curated dataset and trained models, have been made publicly available:
 - Dataset: https://zenodo.org/doi/10.5281/zenodo.10444212.
