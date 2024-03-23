@@ -120,7 +120,7 @@ source create_env.sh
 ```
 
 <a name="data-access"></a>
-## 📂 Data Access
+## 🔐 Data Access
 
 All essential components of the study, including the curated dataset and trained models, have been made publicly available:
 - Dataset: https://zenodo.org/doi/10.5281/zenodo.10444212.
