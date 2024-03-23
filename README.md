@@ -73,6 +73,10 @@ The workflow proposed in this study, presented in Figure 1, consists of several 
 
 **TODO: complete**
 
+<a name="conclusion"></a>
+## 🏁 Conclusion
+This study introduces a robust workflow for analyzing ablation detection and segmentation in hyperspectral images from laser treatment on in-vivo tissues. Leveraging PCA, t-SNE, and Faster R-CNN, we enhance hyperspectral data analysis, facilitating accurate ablation identification and localization. Mean Shift stands out for automated, high-quality segmentation. Our findings guide future research in refining techniques and extending applications to diverse medical scenarios, improving analysis and decision-making in laser cancer therapy and beyond.
+
 <a name="requirements"></a>
 ## 💻 Requirements
 
