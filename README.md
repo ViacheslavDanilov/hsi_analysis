@@ -21,9 +21,9 @@ Our study aims to advance the application of dimensionality reduction, object de
 <a name="data"></a>
 ## 📂 Data
 
-During our experimental study, hyperspectral data acquisition was conducted using a [TIVITA hyperspectral camera](https://diaspective-vision.com/en/produkt/tivita-2-0/#produkt), capturing hypercubes of 640x480x100 voxels, encompassing 100 bands, alongside regular RGB images. The acquisition process, synchronized with breathing motion absence, involved placing polyurethane markers around the target area for spatial reference. Positioning the camera vertically at a 40 cm distance from the surgical field minimized extraneous light, with a 20 W Halogen lamp serving as the light source within the spectral range of 500-995 nm. Two distinct imaging modes, reflectance-based and absorbance-based (Table 1 and Table 2), were employed to provide comprehensive insight into sample properties. A dataset comprising 233 hyperspectral cubes from 20 experiments, spanning pre-laparotomy, temperature escalation, and post-ablation phases, was collected, offering a robust foundation for analysis. Temperature thresholds recorded during the experiments delineate the thermal effects produced, as illustrated in accompanying figures.
+During our experimental study, hyperspectral data acquisition was conducted using a [TIVITA hyperspectral camera](https://diaspective-vision.com/en/produkt/tivita-2-0/#produkt), capturing hypercubes of 640x480x100 voxels, encompassing 100 bands, alongside regular RGB images. The acquisition process, synchronized with breathing motion absence, involved placing polyurethane markers around the target area for spatial reference. Positioning the camera vertically at a 40 cm distance from the surgical field minimized extraneous light, with a 20 W Halogen lamp serving as the light source within the spectral range of 500-995 nm. Two distinct imaging modes, reflectance-based and absorbance-based (**_Table 1_** and **_Table 2_**), were employed to provide comprehensive insight into sample properties. A dataset comprising 233 hyperspectral cubes from 20 experiments, spanning pre-laparotomy, temperature escalation, and post-ablation phases, was collected, offering a robust foundation for analysis. Temperature thresholds recorded during the experiments delineate the thermal effects produced, as illustrated in accompanying figures.
 
-<p align="right">Table 1. Example of hyperspectral images taken at different wavelengths</p>
+<p align="right"><i><strong>Table 1.</strong> Example of hyperspectral images taken at different wavelengths</i></p>
 
 |                                                     Absorbance                                                      |                                                         HSV                                                         |                                                     Reflectance                                                     |
 |:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------:|
@@ -31,7 +31,7 @@ During our experimental study, hyperspectral data acquisition was conducted usin
 
 &nbsp;
 <table style="width:100%">
-        <p align="right">Table 2. Ablated area at different temperatures<p>
+        <p align="right"><i><strong>Table 2.</strong> Ablated area at different temperatures</i><p>
     <tr>
         <th valign="middle" align="center">T </th>
         <th valign="middle" align="center">Absorbance</th>
@@ -60,27 +60,27 @@ During our experimental study, hyperspectral data acquisition was conducted usin
 
 <a name="methods"></a>
 ## 🔬 Methods
-The workflow proposed in this study, presented in Figure 1, consists of several key steps to extract valuable information from hyperspectral data in the laser-mediated thermal treatment scenario. First, dimensionality reduction is applied to reduce the high-dimensional data to a manageable size. Next, a supervised learning technique based on neural networks is used to detect the ablation area, i.e., the region of the image where tissue has been treated by laser irradiation. Finally, an unsupervised learning technique based on clustering is used to segment the spectral signature of the ablation area, allowing the identification of specific tissue types or classes of thermal damage. The proposed workflow provides a comprehensive approach to the analysis of hyperspectral data and has the potential to improve the accuracy and efficiency of diseased tissue analysis in the thermal treatment scenario.
+The workflow proposed in this study, presented in **_Figure 1_**, consists of several key steps to extract valuable information from hyperspectral data in the laser-mediated thermal treatment scenario. First, dimensionality reduction is applied to reduce the high-dimensional data to a manageable size. Next, a supervised learning technique based on neural networks is used to detect the ablation area, i.e., the region of the image where tissue has been treated by laser irradiation. Finally, an unsupervised learning technique based on clustering is used to segment the spectral signature of the ablation area, allowing the identification of specific tissue types or classes of thermal damage. The proposed workflow provides a comprehensive approach to the analysis of hyperspectral data and has the potential to improve the accuracy and efficiency of diseased tissue analysis in the thermal treatment scenario.
 
 <p align="center">
   <img width="100%" height="100%" src="media/workflow.png" alt="Proposed workflow">
 </p>
 
 <p align="left">
-    Figure 1. Proposed workflow for hyperspectral image processing and analysis. The workflow consists of three main components: dimensionality reduction, ablation area detection using supervised learning, and spectral signature segmentation based on unsupervised learning.
+    <i><strong>Figure 1.</strong> Proposed workflow for hyperspectral image processing and analysis. The workflow consists of three main components: dimensionality reduction, ablation area detection using supervised learning, and spectral signature segmentation based on unsupervised learning</i>.
 </p>
 
 <a name="results"></a>
 ## 📈 Results
 
-The segmentation of the ablation area in hyperspectral images was meticulously examined through various clustering algorithms (Figure 2). While DBSCAN, OPTICS, and affinity propagation resulted in oversimplification, k-means, BIRCH, agglomerative clustering, spectral clustering, and GMM showcased superior performance, albeit requiring manual cluster input. Notably, Mean Shift emerged as a standout performer, offering high-quality segmentation without manual cluster definition, thanks to its adaptability, autonomous cluster center determination, and robustness to noise. Our analysis revealed significant variation in cluster numbers across reflectance and absorbance modalities, influenced by tissue-specific spectral characteristics and temperature-dependent variations, underscoring the necessity for adaptable segmentation approaches tailored to spectral complexities.
+The segmentation of the ablation area in hyperspectral images was meticulously examined through various clustering algorithms (**_Figure 2_**). While DBSCAN, OPTICS, and affinity propagation resulted in oversimplification, k-means, BIRCH, agglomerative clustering, spectral clustering, and GMM showcased superior performance, albeit requiring manual cluster input. Notably, Mean Shift emerged as a standout performer, offering high-quality segmentation without manual cluster definition, thanks to its adaptability, autonomous cluster center determination, and robustness to noise. Our analysis revealed significant variation in cluster numbers across reflectance and absorbance modalities, influenced by tissue-specific spectral characteristics and temperature-dependent variations, underscoring the necessity for adaptable segmentation approaches tailored to spectral complexities.
 
 <p align="center">
   <img width="80%" height="80%" src="media/clustering.png" alt="Segmentation results">
 </p>
 
 <p align="left">
-    Figure 2. Comparison of ablation segmentation performed with different unsupervised algorithms. The top row represents the input data for clustering algorithms.
+    <i><strong>Figure 2.</strong> Comparison of ablation segmentation performed with different unsupervised algorithms. The top row represents the input data for clustering algorithms.</i>
 </p>
 
 <a name="conclusion"></a>
