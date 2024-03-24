@@ -74,7 +74,6 @@ The workflow proposed in this study, presented in <a href="#figure-1">Figure 1</
 
 <a name="results"></a>
 ## 📈 Results
-
 The segmentation of the ablation area in hyperspectral images was meticulously examined through various clustering algorithms (<a href="#figure-2">Figure 2</a>). While DBSCAN, OPTICS, and affinity propagation resulted in oversimplification, k-means, BIRCH, agglomerative clustering, spectral clustering, and GMM showcased superior performance, albeit requiring manual cluster input. Notably, Mean Shift emerged as a standout performer, offering high-quality segmentation without manual cluster definition, thanks to its adaptability, autonomous cluster center determination, and robustness to noise. Our analysis revealed significant variation in cluster numbers across reflectance and absorbance modalities, influenced by tissue-specific spectral characteristics and temperature-dependent variations, underscoring the necessity for adaptable segmentation approaches tailored to spectral complexities.
 
 <p align="center">
@@ -91,7 +90,6 @@ This study introduces a robust workflow for analyzing ablation detection and seg
 
 <a name="requirements"></a>
 ## 💻 Requirements
-
 - Operating System
   - [x] macOS
   - [x] Linux
@@ -101,15 +99,14 @@ This study introduces a robust workflow for analyzing ablation detection and seg
 
 <a name="installation"></a>
 ## ⚙ Installation
-
-Step 1: Download and install Miniconda
+**Step 1:** Download and install Miniconda
 ``` bash
 wget https://repo.anaconda.com/miniconda/Miniconda3-py38_22.11.1-1-Linux-x86_64.sh
 chmod +x Miniconda3-latest-Linux-x86_64.sh
 ./Miniconda3-latest-Linux-x86_64.sh
 ```
 
-Step 2: Install FFmpeg and verify that the installation is correct
+**Step 2:** Install FFmpeg and verify that the installation is correct
 
 - Linux
 ``` bash
@@ -127,59 +124,22 @@ brew install ffmpeg
 ffmpeg
 ```
 
-Step 3: Clone the repository, create a conda environment, and install the requirements for the repository
+**Step 3:** Clone the repository, create a conda environment, and install the requirements for the repository
 ``` bash
-git clone https://github.com/ViacheslavDanilov/oct_segmentation.git
-cd oct_segmentation
+git clone https://github.com/ViacheslavDanilov/hsi_analysis.git
+cd hsi_analysis
 chmod +x create_env.sh
 source create_env.sh
 ```
 
 <a name="data-access"></a>
 ## 🔐 Data Access
-
 All essential components of the study, including the curated dataset and trained models, have been made publicly available:
-- Dataset: https://zenodo.org/doi/10.5281/zenodo.10444212.
-- Models: https://zenodo.org/doi/10.5281/zenodo.10444269.
-
-Alternatively, you may download the dataset, models, and study results using the DVC commands listed below.
-
-**NOTE:** As the data storage is organized through Google Drive, errors may occur when downloading study artifacts due to insufficient permissions to the data repository. If you encounter problems with the dataset or models, or if you would like to use the data presented, please contact [Viacheslav Danilov](https://github.com/ViacheslavDanilov) at <a href="mailto:viacheslav.v.danilov@gmail.com">viacheslav.v.danilov@gmail.com</a> or [Paola Saccomandi](https://mecc.polimi.it/en/research/faculty/prof-paola-saccomandi) at <a href="mailto:paola.saccomandi@polimi.it">paola.saccomandi@polimi.it</a> to request access to the data repository. Please note that access is only granted upon request.
-
-1. To download the data, clone the repository:
-``` bash
-git clone https://github.com/ViacheslavDanilov/hsi_analysis.git
-```
-
-2. Install DVC:
-``` bash
-pip install dvc==2.55.0 dvc-gdrive==2.19.2
-```
-
-3. Download the dataset(s) using the following DVC commands:
-
-|                                                   Dataset                                                   |                                                                                       Description                                                                                        | Size, Gb |                Command                 |
-|:-----------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------:|:--------------------------------------:|
-|             [Raw](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/data/raw.dvc)             |                                                              Dataset based on 26 experiments with 304 hyperspectral images                                                               |   34.4   |    ```dvc pull dvc/data/raw.dvc```     |
-|  [Supervisely (input)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/data/sly_input.dvc)  |                                                    Dataset used for labeling on the [Supervisely](https://supervisely.com/) platform                                                     |   7.5    | ```dvc pull dvc/data/sly_input.dvc```  |
-| [Supervisely (output)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/data/sly_output.dvc) | Dataset that represents the labeled dataset for object detection in a [Supervisely format](https://docs.supervise.ly/data-organization/00_ann_format_navi/04_supervisely_format_objects) |   2.6    | ```dvc pull dvc/data/sly_output.dvc``` |
-|         [Interim](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/data/interim.dvc)         |                                                                 Dataset used for debugging and explanatory data analysis                                                                 |   2.6    |  ```dvc pull dvc/data/interim.dvc```   |
-|            [COCO](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/data/coco.dvc)            |                                        Dataset in [COCO format](https://cocodataset.org/#format-data) and used to train object recognition models                                        |   10.5   |    ```dvc pull dvc/data/coco.dvc```    |
-
-4. Download the study results using the following DVC commands:
-
-|                                                           Artifact                                                           |                                Description                                 | Size, Gb |                      Command                      |
-|:----------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------:|:--------:|:-------------------------------------------------:|
-|        [Object detection results](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/mlruns.dvc)         | Results of training four different Faster R-CNN networks tracked by MLFlow |   0.67   |       ```dvc pull dvc/models/mlruns.dvc```        |
-|       [Clustering results](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/clustering/mean_shift.dvc)        |    Segmentation of hyperspectral images using the Mean Shift algorithm     |   19.6   |   ```dvc pull dvc/clustering/mean_shift.dvc```    |
-|  [Faster R-CNN (PCA + Abs)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/FasterRCNN_pca_abs.dvc)   |         Faster R-CNN model trained on the PCA + Absorbance dataset         |   0.33   |    ```dvc dvc/models/FasterRCNN_pca_abs.dvc```    |
-|  [Faster R-CNN (PCA + Ref)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/FasterRCNN_pca_ref.dvc)   |        Faster R-CNN model trained on the PCA + Reflectance dataset         |   0.33   | ```dvc pull dvc/models/FasterRCNN_pca_ref.dvc```  |
-| [Faster R-CNN (t-SNE + Abs)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/FasterRCNN_tsne_abs.dvc) |        Faster R-CNN model trained on the t-SNE + Absorbance dataset        |   0.33   | ```dvc pull dvc/models/FasterRCNN_tsne_abs.dvc``` |
-| [Faster R-CNN (t-SNE + Ref)](https://github.com/ViacheslavDanilov/hsi_analysis/blob/main/dvc/models/FasterRCNN_tsne_ref.dvc) |       Faster R-CNN model trained on the t-SNE + Reflectance dataset        |   0.33   | ```dvc pull dvc/models/FasterRCNN_tsne_ref.dvc``` |
+- **Dataset:** https://zenodo.org/doi/10.5281/zenodo.10444212.
+- **Models:** https://zenodo.org/doi/10.5281/zenodo.10444269.
 
 <a name="how-to-cite"></a>
 ## 🖊️ How to Cite
-
 Please cite [our paper](https://www.sciencedirect.com/journal/computers-in-biology-and-medicine) if you found our data, methods, or results helpful for your research:
 
 > Danilov V., De Landro M., Felli E., Barberio M., Diana M., Saccomandi P. (**2024**). _Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging_. **Computers in Biology and Medicine**.
