@@ -2,11 +2,11 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444269.svg)](https://zenodo.org/doi/10.5281/zenodo.10444269)
 [![DOI](http://img.shields.io/badge/DOI-TO.BE.UPDATED.SOON-B31B1B)](https://www.sciencedirect.com/journal/computers-in-biology-and-medicine)
 
-# Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging
+# Harnessing machine learning for laser ablation assessment in hyperspectral imaging
 
-<a name="table-of-contents"></a>
+<a name="contents"></a>
 ## 📖 Contents
-- [Purpose](#purpose)
+- [Introduction](#introduction)
 - [Data](#data)
 - [Methods](#methods)
 - [Results](#results)
@@ -16,9 +16,9 @@
 - [Data Access](#data-access)
 - [How to Cite](#how-to-cite)
 
-<a name="purpose"></a>
-## 🎯 Purpose
-Our study aims to advance the application of dimensionality reduction, object detection, and segmentation in Hyperspectral Imaging (HSI), specifically for tissue ablation monitoring. We evaluate different modalities for ablation detection and segmentation in [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging), focusing on thermal effects induced by laser ablation treatment in vivo.
+<a name="introduction"></a>
+## 🎯 Introduction
+Our study aims to advance the application of dimensionality reduction, object detection, and segmentation in Hyperspectral Imaging (HSI), specifically for tissue ablation monitoring. We evaluate different modalities for ablation detection and segmentation in [hyperspectral images](https://en.wikipedia.org/wiki/Hyperspectral_imaging), focusing on thermal effects induced by laser ablation treatment _in vivo_.
 
 <a name="data"></a>
 ## 📂 Data
