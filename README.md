@@ -25,7 +25,7 @@ Our study aims to advance the application of dimensionality reduction, object de
 
 During our experimental study, we utilized a [TIVITA hyperspectral camera](https://diaspective-vision.com/en/produkt/tivita-2-0/#produkt) with a spectral range of 500-995 nm to capture hypercubes of 640x480x100 voxels, encompassing 100 bands, alongside regular RGB images. The acquisition process, synchronized to mitigate breathing motion, involved placing polyurethane markers around the target area for spatial reference. To minimize extraneous light, the camera was positioned vertically at a 40 cm distance from the surgical field. A 20 W Halogen lamp was used as the light source. Two distinct imaging modes, reflectance-based and absorbance-based (<a href="#table-1">Table 1</a> and <a href="#table-2">Table 2</a>), were employed to provide comprehensive insight into sample properties. A dataset comprising 233 hyperspectral cubes from 20 experiments, spanning pre-laparotomy, temperature escalation, and post-ablation phases, was collected, offering a robust foundation for analysis. Temperature thresholds recorded during the experiments delineate the thermal effects produced, as illustrated in accompanying figures.
 
-<p align="right"><i><strong id="table-1">Table 1.</strong> Example of hyperspectral images taken at different wavelengths</i></p>
+<p align="right"><i><strong id="table-1">Table 1.</strong> Example of hyperspectral images taken at different wavelengths.</i></p>
 
 |                                                     Absorbance                                                      |                                                         HSV                                                         |                                                     Reflectance                                                     |
 |:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------:|
@@ -33,7 +33,7 @@ During our experimental study, we utilized a [TIVITA hyperspectral camera](https
 
 &nbsp;
 <table style="width:100%">
-        <p align="right"><i><strong id="table-2">Table 2.</strong> Ablated area at different temperatures</i><p>
+        <p align="right"><i><strong id="table-2">Table 2.</strong> Ablated area at different temperatures.</i><p>
     <tr>
         <th valign="middle" align="center">T </th>
         <th valign="middle" align="center">Absorbance</th>
@@ -78,7 +78,7 @@ The workflow proposed in this study, presented in <a href="#figure-1">Figure 1</
 The segmentation of the ablation area in hyperspectral images was meticulously examined through various clustering algorithms (<a href="#figure-2">Figure 2</a>). While DBSCAN, OPTICS, and affinity propagation resulted in oversimplification, k-means, BIRCH, agglomerative clustering, spectral clustering, and GMM showcased superior performance, albeit requiring manual cluster input. Notably, Mean Shift emerged as a standout performer, offering high-quality segmentation without manual cluster definition, thanks to its adaptability, autonomous cluster center determination, and robustness to noise. Our analysis revealed significant variation in cluster numbers across reflectance and absorbance modalities, influenced by tissue-specific spectral characteristics and temperature-dependent variations, underscoring the necessity for adaptable segmentation approaches tailored to spectral complexities.
 
 <p align="center">
-  <img  id="figure-2" width="80%" height="80%" src="media/clustering.png" alt="Segmentation results">
+  <img  id="figure-2" width="70%" height="70%" src="media/clustering.png" alt="Segmentation results">
 </p>
 
 <p align="left">
