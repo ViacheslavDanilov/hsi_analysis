@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444212.svg)](https://zenodo.org/doi/10.5281/zenodo.10444212)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10444269.svg)](https://zenodo.org/doi/10.5281/zenodo.10444269)
-[![DOI](http://img.shields.io/badge/DOI-TO.BE.UPDATED.SOON-B31B1B)](https://www.sciencedirect.com/journal/computers-in-biology-and-medicine)
+[![DOI](http://img.shields.io/badge/DOI-10.1016/j.compbiomed.2024.108849-B31B1B)](https://doi.org/10.1016/j.compbiomed.2024.108849)
 
 # Harnessing machine learning for laser ablation assessment in hyperspectral imaging
 
@@ -140,6 +140,6 @@ All essential components of the study, including the curated dataset and trained
 
 <a name="how-to-cite"></a>
 ## 🖊️ How to Cite
-Please cite [our paper](https://www.sciencedirect.com/journal/computers-in-biology-and-medicine) if you found our data, methods, or results helpful for your research:
+Please cite [our paper](https://www.sciencedirect.com/science/article/pii/S001048252400934X) if you found our data, methods, or results helpful for your research:
 
-> Danilov V., De Landro M., Felli E., Barberio M., Diana M., Saccomandi P. (**2024**). _Harnessing Machine Learning for Laser Ablation Assessment in Hyperspectral Imaging_. **Computers in Biology and Medicine**.
+> Danilov V.V., De Landro M., Felli E., Barberio M., Diana M., Saccomandi P. (**2024**). _Advancing laser ablation assessment in hyperspectral imaging through machine learning_. **Computers in Biology and Medicine**. DOI: https://doi.org/10.1016/j.compbiomed.2024.108849
