@@ -134,9 +134,10 @@ source create_env.sh
 
 <a name="data-access"></a>
 ## 🔐 Data Access
-All essential components of the study, including the curated dataset and trained models, have been made publicly available:
-- **Dataset:** https://zenodo.org/doi/10.5281/zenodo.10444212.
-- **Models:** https://zenodo.org/doi/10.5281/zenodo.10444269.
+All essential components of the study, including the curated source code, dataset, and trained models, are publicly available:
+- **Source code:** https://github.com/ViacheslavDanilov/hsi_analysis
+- **Dataset:** https://doi.org/10.5281/zenodo.10444212
+- **Models:** https://doi.org/10.5281/zenodo.10444269
 
 <a name="how-to-cite"></a>
 ## 🖊️ How to Cite
